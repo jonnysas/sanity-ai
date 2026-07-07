@@ -99,7 +99,7 @@
     const still = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     const th = dark
       ? { bg: "#211F27", line: "#34323C", t1: "#EDECEF", t2: "#9C99A6", chk: "#30d158", x: "#8A8794", xh: "#33313C", xhc: "#D2D0D8", shadow: "0 0 0 1px rgba(255,255,255,0.04), 0 14px 40px rgba(0,0,0,0.5)" }
-      : { bg: "#FDFCFA", line: "#ECEAE6", t1: "#1C1B22", t2: "#85828E", chk: "#34c759", x: "#B3B0BC", xh: "#F2F0EC", xhc: "#4A4852", shadow: "0 2px 6px rgba(28,27,34,0.06), 0 14px 36px rgba(40,40,70,0.18)" };
+      : { bg: "#FDFCFA", line: "#ECEAE6", t1: "#1C1B22", t2: "#6E6B78", chk: "#34c759", x: "#B3B0BC", xh: "#F2F0EC", xhc: "#4A4852", shadow: "0 2px 6px rgba(28,27,34,0.06), 0 14px 36px rgba(40,40,70,0.18)" };
     const host = document.createElement("div");
     host.style.cssText = "all:initial;position:fixed;z-index:2147483647;bottom:20px;right:20px;";
     const root = host.attachShadow({ mode: "open" });
@@ -123,6 +123,7 @@
       ".x{flex:0 0 auto;border:none;background:none;color:" + th.x + ";font-size:14px;line-height:1;cursor:pointer;padding:4px;border-radius:6px;}" +
       ".x:hover{background:" + th.xh + ";color:" + th.xhc + ";}";
     const card = document.createElement("div"); card.className = "card";
+    card.setAttribute("role", "status"); // polite live region — screen readers hear the completion
     const av = document.createElement("div"); av.className = "av";
     av.style.background = tool.grad ? "linear-gradient(135deg,#6d5efc,#c43cdb)" : tool.color;
     av.textContent = tool.glyph;

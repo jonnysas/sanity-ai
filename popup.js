@@ -217,7 +217,7 @@
 
     if (kind === "wait" || kind === "input") {
       const x = document.createElement("button");
-      x.className = "icon-btn x"; x.textContent = "\u2715"; x.title = "Dismiss";
+      x.className = "icon-btn x"; x.textContent = "\u2715"; x.title = "Dismiss"; x.setAttribute("aria-label", "Dismiss");
       x.addEventListener("click", (e) => {
         e.stopPropagation();
         if (canMessage) chrome.runtime.sendMessage({ type: "dismiss", tabId: it.tabId }, (st) => renderLive(st));
@@ -225,7 +225,7 @@
       controls.append(x);
     } else if (kind === "recent") {
       const x = document.createElement("button");
-      x.className = "icon-btn x"; x.textContent = "\u2715"; x.title = "Clear this one";
+      x.className = "icon-btn x"; x.textContent = "\u2715"; x.title = "Clear this one"; x.setAttribute("aria-label", "Clear this one");
       x.addEventListener("click", (e) => {
         e.stopPropagation();
         if (canMessage) chrome.runtime.sendMessage({ type: "clearHistoryItem", ts: it.ts, tabId: it.tabId }, (st) => renderLive(st));
