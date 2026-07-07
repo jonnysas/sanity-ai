@@ -201,23 +201,33 @@ async function listWaiting() {
     .map(([tabId, v]) => ({ tabId: Number(tabId), ...v }))
     .sort((a, b) => b.ts - a.ts); // newest first
 }
+async function focusWindow(winId) {
+  if (typeof winId !== "number") return;
+  // Bring the window to the front — restoring it first if it's minimized.
+  try {
+    const win = await chrome.windows.get(winId);
+    const upd = { focused: true };
+    if (win && win.state === "minimized") upd.state = "normal";
+    await chrome.windows.update(winId, upd);
+  } catch (e) { try { await chrome.windows.update(winId, { focused: true }); } catch (e2) {} }
+}
 async function focusTab(tabId, url) {
   const w = await getWaiting();
   const entry = w[tabId];
   const reopen = url || (entry && entry.url);
   try {
     // Resolve the tab's *current* window (it may have moved since we recorded it).
-    let winId = entry && entry.windowId;
-    try { const t = await chrome.tabs.get(tabId); if (t && typeof t.windowId === "number") winId = t.windowId; } catch (e) {}
+    const t = await chrome.tabs.get(tabId); // throws if the tab is gone
+    const winId = (t && typeof t.windowId === "number") ? t.windowId : (entry && entry.windowId);
+    // Window FIRST, then the tab: activating a tab does not raise its window,
+    // so a cross-window jump must lead with the window itself.
+    await focusWindow(winId);
     await chrome.tabs.update(tabId, { active: true });
+    // Re-assert shortly after: when the click came from the popup, the popup
+    // closes right about now and Chrome hands focus back to the popup's own
+    // window — which used to swallow jumps to any other window.
     if (typeof winId === "number") {
-      // Bring that window to the front — restoring it first if it's minimized.
-      try {
-        const win = await chrome.windows.get(winId);
-        const upd = { focused: true };
-        if (win && win.state === "minimized") upd.state = "normal";
-        await chrome.windows.update(winId, upd);
-      } catch (e) { try { await chrome.windows.update(winId, { focused: true }); } catch (e2) {} }
+      setTimeout(() => { focusWindow(winId); }, 150);
     }
   } catch (e) {
     // Tab was closed — reopen the conversation in a new tab if we know its URL.
