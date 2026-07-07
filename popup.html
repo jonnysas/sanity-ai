@@ -39,9 +39,10 @@
       --hope-b: #C43CDB;
       --hover: #F4F2EF;
       --chip-line: #E5E3DE;
-      --shadow-card: 0 1px 2px rgba(28,27,34,0.04), 0 4px 14px rgba(80,75,140,0.05);
+      --shadow-card: 0 1px 2px rgba(28,27,34,0.04), 0 8px 24px rgba(80,75,140,0.06);
       --shadow-alert: 0 2px 10px rgba(245,158,11,0.07);
       --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
     }
     html, body { width: 360px; margin: 0 auto; }
     body {
@@ -61,7 +62,7 @@
     .header img { width: 28px; height: 28px; border-radius: 8px; display: block; }
     .header h1 { font-size: 15px; font-weight: 680; letter-spacing: -0.015em; color: var(--ink); }
     .header .version { font-size: 10.5px; font-weight: 500; color: var(--muted); margin-left: auto; }
-    .gear { display: flex; align-items: center; justify-content: center; margin-left: 2px; width: 30px; height: 30px; padding: 0; border: none; background: transparent; color: var(--faint); cursor: pointer; border-radius: 8px; transition: background .15s, color .15s; }
+    .gear { display: flex; align-items: center; justify-content: center; margin-left: 2px; width: 30px; height: 30px; padding: 0; border: none; background: transparent; color: var(--faint); cursor: pointer; border-radius: 8px; transition: background .18s var(--ease), color .18s var(--ease); }
     .gear:hover { background: var(--accent-soft); color: var(--accent); }
     .gear.active { background: var(--accent-soft); color: var(--accent); }
     .gear svg { display: block; }
@@ -82,7 +83,7 @@
        Bare ledger = done earlier (reference, not action).           */
     .live { margin-bottom: 14px; }
     .live-block + .live-block { margin-top: 16px; }
-    .live-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 5px; box-shadow: var(--shadow-card); }
+    .live-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 5px; box-shadow: var(--shadow-card); }
 
     .eyebrow {
       font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
@@ -122,14 +123,14 @@
     .eyebrow.recent .n { background: var(--line-soft); color: var(--muted); }
     .live-card.recent { background: transparent; border-color: transparent; box-shadow: none; padding: 0; border-radius: 0; }
     .live-card.recent .item + .item { border-top: 1px solid var(--line-soft); margin-top: 0; }
-    .live-card.recent .item { border-radius: 8px; }
+    .live-card.recent .item { border-radius: 10px; }
     .live-card.recent .item-title { color: var(--ink-2); font-weight: 560; }
     .live-card.recent .item.hope::before { opacity: 0.35; }
     .live-card.recent .item.hope .item-title { background: none; -webkit-text-fill-color: var(--ink-2); color: var(--ink-2); }
     .live-card.recent .item.hope .site { background: none; -webkit-text-fill-color: var(--muted); color: var(--muted); }
 
     /* ── Fleet rows ── */
-    .item { display: flex; align-items: center; gap: 11px; padding: 10px 9px; min-height: 44px; cursor: pointer; border-radius: 10px; position: relative; transition: background 0.12s ease; }
+    .item { display: flex; align-items: center; gap: 11px; padding: 10px 9px; min-height: 44px; cursor: pointer; border-radius: 12px; position: relative; transition: background 0.18s var(--ease); }
     .item + .item { margin-top: 1px; }
     .item:hover { background: var(--hover); }
     .item:focus-visible { outline: none; box-shadow: var(--focus); }
@@ -139,6 +140,10 @@
     /* the site name may ellipsize under pressure, but it never vanishes */
     .item-meta > span:first-child { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 34px; }
     .item-meta > span:nth-child(2) { flex-shrink: 0; }
+    .item-meta .dur { margin-left: auto; }
+    .item-meta .dur ~ .dur { margin-left: 0; }
+    /* expectation line on running rows: should I wait, or walk away? */
+    .item-meta .eta { flex-shrink: 0; color: var(--muted); opacity: 0.85; }
 
     /* tool identity avatar; running rows breathe (~15 breaths/min) */
     .avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; position: relative; }
@@ -160,9 +165,9 @@
        the flex flow — so the title and meta keep their full width. */
     .controls { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: 9px; }
     .item:hover .controls, .controls:focus-within { background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: blur(8px); }
-    /* starred rows keep a little air for the always-visible star badge */
-    .item.starred .item-body { padding-right: 24px; }
-    .icon-btn { border: none; background: none; color: var(--faint); cursor: pointer; padding: 5px; border-radius: 7px; line-height: 0; flex-shrink: 0; opacity: 0; transition: opacity .12s ease, background .12s ease, color .12s ease; }
+    /* starred rows keep a clean lane for the always-visible star badge */
+    .item.starred .item-body { padding-right: 30px; }
+    .icon-btn { border: none; background: none; color: var(--faint); cursor: pointer; padding: 5px; border-radius: 7px; line-height: 0; flex-shrink: 0; opacity: 0; transition: opacity .16s var(--ease), background .16s var(--ease), color .16s var(--ease); }
     .icon-btn svg { display: block; }
     .item:hover .icon-btn, .icon-btn:focus-visible { opacity: 1; }
     .icon-btn:hover { background: var(--line-soft); color: var(--ink-2); }
@@ -189,7 +194,7 @@
 
     /* new rows settle in like sediment */
     @keyframes enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-    .item.enter { animation: enter 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+    .item.enter { animation: enter 0.3s var(--ease); }
 
     /* status dots (kept for compatibility) */
     .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -243,10 +248,10 @@
     .col-head:hover { background: var(--accent-wash); }
     .col-head:focus-visible { outline: none; box-shadow: inset var(--focus); }
     .col-head .label { flex: 1; }
-    .col-head .chevron { color: var(--faint); transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
+    .col-head .chevron { color: var(--faint); transition: transform 0.2s var(--ease); }
     .collapsible.open .col-head .chevron { transform: rotate(90deg); }
     .col-body { display: none; padding: 0 14px 4px; }
-    .collapsible.open .col-body { display: block; animation: fade 0.18s ease; }
+    .collapsible.open .col-body { display: block; animation: fade 0.22s var(--ease); }
     @keyframes fade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; }
@@ -257,13 +262,13 @@
 
     .toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
     .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-    .toggle .slider { position: absolute; inset: 0; background: #D6D3DC; border-radius: 11px; transition: background 0.18s; cursor: pointer; }
-    .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+    .toggle .slider { position: absolute; inset: 0; background: #D6D3DC; border-radius: 11px; transition: background 0.22s var(--ease); cursor: pointer; }
+    .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.22s var(--ease); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
     .toggle input:checked + .slider { background: var(--accent); }
     .toggle input:checked + .slider::before { transform: translateX(18px); }
     .toggle input:focus-visible + .slider { box-shadow: var(--focus); }
 
-    .test-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 6px 0 12px; padding: 9px; border: 1px solid var(--chip-line); border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 560; color: var(--accent); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .test-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 6px 0 12px; padding: 9px; border: 1px solid var(--chip-line); border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 560; color: var(--accent); cursor: pointer; transition: background .18s var(--ease), border-color .18s var(--ease); font-family: inherit; }
     .test-btn:hover { background: var(--accent-soft); border-color: var(--accent-line); }
     .test-btn:focus-visible { outline: none; box-shadow: var(--focus); }
     /* the chime made visible: three rising dots — C · E · G */
@@ -294,7 +299,7 @@
     .exp-foot { margin-top: 11px; font-size: 11px; color: var(--muted); line-height: 1.5; }
     .exp-foot a { color: var(--accent); font-weight: 600; text-decoration: none; }
     .exp-foot a:hover { text-decoration: underline; }
-    .show-more { display:block; width:100%; margin-top:8px; padding:7px; cursor:pointer; border:none; background:transparent; color:var(--muted); font-size:11.5px; font-weight:600; border-radius:9px; transition:background .15s,color .15s; font-family: inherit; }
+    .show-more { display:block; width:100%; margin-top:8px; padding:7px; cursor:pointer; border:none; background:transparent; color:var(--muted); font-size:11.5px; font-weight:600; border-radius:9px; transition:background .18s var(--ease),color .18s var(--ease); font-family: inherit; }
     .show-more:hover { background:var(--accent-soft); color:var(--accent); }
 
     .stats-summary { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
@@ -352,6 +357,7 @@
         --shadow-alert: none;
       }
       .header img { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+      .live-card:not(.recent), .collapsible, .clear, .panel-open-note { background-image: linear-gradient(rgba(255,255,255,0.018), rgba(255,255,255,0) 46%); }
       .eyebrow.wait .n { color: #14131A; }
       .toggle .slider { background: #3A3842; }
       .toggle .slider::before { background: #ECEBEF; }

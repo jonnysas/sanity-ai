@@ -9,9 +9,11 @@ import os
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
+# The panel keeps the wordmark (a docked surface deserves identity);
+# it only drops the fixed popup width.
 OVERRIDE = (
     "  <style>html,body{width:auto !important;max-width:none;} body{padding:16px;}"
-    " .header img,.header h1{display:none;} .header{min-height:32px;}</style>\n"
+    " .header{min-height:32px;}</style>\n"
     "  <!-- GENERATED from popup.html by build.py — do not edit -->\n"
 )
 
