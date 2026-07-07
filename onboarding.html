@@ -4,50 +4,132 @@
 <meta charset="utf-8">
 <title>Welcome to Sanity AI</title>
 <style>
-  :root { --indigo:#6d5efc; --ink:#222; --muted:#8a8a92; --line:#e9e9ee; --bg:#f7f7f9; --card:#fff; }
+  /* Sanity AI — "Still Water": the first thing a new user sees is the
+     product breathing. Calm is the feature; this page models it. */
+  :root {
+    --bg: #FAF9F7;
+    --bg-wash: radial-gradient(90% 60% at 50% -5%, #F0EDFB 0%, #FAF9F7 60%);
+    --card: #FFFFFF;
+    --ink: #1C1B22;
+    --ink-2: #4A4852;
+    --muted: #85828E;
+    --faint: #B3B0BC;
+    --line: #ECEAE6;
+    --line-soft: #F2F0EC;
+    --accent: #4F46E5;
+    --accent-soft: #EFEDFC;
+    --success: #1FA855;
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --indigo:#8b83ff; --ink:#ececef; --muted:#9a9aa4; --line:#2c2c34; --bg:#161619; --card:#1e1e24; }
+    :root {
+      --bg: #141317;
+      --bg-wash: radial-gradient(90% 60% at 50% -5%, #1A1826 0%, #141317 60%);
+      --card: #1D1C23;
+      --ink: #EDECEF;
+      --ink-2: #C6C4CE;
+      --muted: #9C99A6;
+      --faint: #64626E;
+      --line: #2C2A33;
+      --line-soft: #232128;
+      --accent: #8B83FF;
+      --accent-soft: rgba(139, 131, 255, 0.14);
+      --success: #2FB868;
+    }
   }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-         min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 20px; }
-  .wrap { max-width: 520px; width:100%; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:36px 36px 30px; box-shadow:0 8px 40px rgba(80,75,140,.08); }
-  .logo { width:56px; height:56px; border-radius:14px; display:block; margin:0 auto 18px; box-shadow:0 2px 12px rgba(80,75,140,.25); }
-  h1 { font-size:24px; margin:0 0 6px; text-align:center; letter-spacing:-.01em; }
-  .tag { text-align:center; color:var(--muted); margin:0 0 26px; font-size:14px; }
-  .how { border-top:1px solid var(--line); padding-top:20px; }
-  .step { display:flex; gap:12px; margin-bottom:14px; align-items:baseline; }
-  .n { flex:0 0 22px; height:22px; border-radius:50%; background:var(--indigo); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; }
-  .step p { margin:0; }
-  .step b { font-weight:650; }
-  .chime { display:block; width:100%; margin:22px 0 8px; padding:12px; font:inherit; font-size:14.5px; font-weight:650;
-           border:none; border-radius:11px; background:var(--indigo); color:#fff; cursor:pointer; }
-  .chime:hover { filter:brightness(1.06); }
-  .chime.played { background:#22c55e; }
-  .sites { text-align:center; color:var(--muted); font-size:12.5px; margin-top:14px; }
-  .hint { text-align:center; color:var(--muted); font-size:12px; margin-top:20px; }
-  .hint .kbd { border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:11px; }
-  .priv { text-align:center; color:var(--muted); font-size:11.5px; margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+  body {
+    margin: 0; background: var(--bg); background-image: var(--bg-wash); background-repeat: no-repeat;
+    color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px;
+  }
+  .wrap { max-width: 520px; width: 100%; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 44px 44px 34px; box-shadow: 0 1px 2px rgba(28,27,34,0.03), 0 12px 44px rgba(80,75,140,0.07);
+  }
+  @media (prefers-color-scheme: dark) { .card { box-shadow: 0 12px 48px rgba(0,0,0,0.4); } }
+
+  /* the mark, breathing at resting pace */
+  .orb { display: flex; justify-content: center; margin-bottom: 20px; }
+  .orb svg { width: 64px; height: 64px; border-radius: 17px; animation: breathe 6000ms cubic-bezier(0.37, 0, 0.63, 1) infinite; transform-origin: center; }
+  @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+
+  h1 { font-size: 26px; font-weight: 680; letter-spacing: -0.02em; line-height: 1.25; margin: 0 0 8px; text-align: center; }
+  .tag { text-align: center; color: var(--muted); margin: 0 0 30px; font-size: 14.5px; }
+
+  .how { border-top: 1px solid var(--line-soft); padding-top: 24px; }
+  .step { display: flex; gap: 14px; margin-bottom: 16px; align-items: baseline; }
+  .n { flex: 0 0 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+  .step p { margin: 0; color: var(--ink-2); }
+  .step b { font-weight: 650; color: var(--ink); }
+
+  .chime {
+    display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%;
+    margin: 26px 0 10px; padding: 13px; font: inherit; font-size: 14.5px; font-weight: 650;
+    border: none; border-radius: 12px; background: var(--accent); color: #fff; cursor: pointer;
+    transition: filter .15s, background .3s;
+  }
+  .chime:hover { filter: brightness(1.06); }
+  .chime:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--accent); }
+  .chime.played { background: var(--success); }
+  /* the chime made visible: three rising notes — C · E · G */
+  .chime .notes { display: inline-flex; align-items: flex-end; gap: 3px; height: 12px; }
+  .chime .notes i { width: 4px; border-radius: 2px; background: rgba(255,255,255,0.9); }
+  .chime .notes i:nth-child(1) { height: 5px; opacity: .55; }
+  .chime .notes i:nth-child(2) { height: 8.5px; opacity: .75; }
+  .chime .notes i:nth-child(3) { height: 12px; opacity: 1; }
+
+  .sites { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 16px; line-height: 1.7; }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 22px; }
+  .hint .kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 11px; color: var(--ink-2); }
+  .priv { text-align: center; color: var(--faint); font-size: 11.5px; margin-top: 18px; border-top: 1px solid var(--line-soft); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orb svg { animation: none; }
+    .chime { transition: none; }
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <img class="logo" src="icon128.png" alt="Sanity AI">
+      <div class="orb" aria-hidden="true">
+        <!-- Still Horizon: the sun settling into quiet water — the day is done -->
+        <svg viewBox="0 0 64 64" role="img" aria-label="Sanity AI">
+          <defs>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#6057F4"/><stop offset="1" stop-color="#4C43DF"/>
+            </linearGradient>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3931B9"/><stop offset="1" stop-color="#2F289E"/>
+            </linearGradient>
+            <clipPath id="tile"><rect width="64" height="64" rx="17"/></clipPath>
+          </defs>
+          <g clip-path="url(#tile)">
+            <rect width="64" height="64" fill="url(#sky)"/>
+            <circle cx="32" cy="35" r="17" fill="#FFFDF4" opacity="0.10"/>
+            <circle cx="32" cy="35" r="11.5" fill="#FFFDF4"/>
+            <rect y="39.4" width="64" height="24.6" fill="url(#sea)"/>
+            <line x1="8" y1="39.4" x2="56" y2="39.4" stroke="#fff" stroke-opacity="0.22" stroke-width="1.2"/>
+            <line x1="25" y1="45.8" x2="39" y2="45.8" stroke="#FFFDF4" stroke-opacity="0.38" stroke-width="1.4" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
       <h1>You can stop checking now.</h1>
       <p class="tag">Sanity AI tells you the moment your agents finish.</p>
 
       <div class="how">
         <div class="step"><span class="n">1</span><p><b>Work as usual.</b> Open Claude, ChatGPT, Gemini, Cursor, or Hope AI and hand off a task.</p></div>
         <div class="step"><span class="n">2</span><p><b>Walk away.</b> Sanity AI watches the tab for you — no spinner-staring.</p></div>
-        <div class="step"><span class="n">3</span><p><b>Get pulled back at the right moment.</b> A chime, a notification, a mark on the tab — and a live overview in the side panel.</p></div>
+        <div class="step"><span class="n">3</span><p><b>Get pulled back at the right moment.</b> A chime, a gentle nudge, a mark on the tab — and a live overview in the side panel.</p></div>
       </div>
 
-      <button class="chime" id="chimeBtn">Play the chime you'll hear</button>
-      <div class="sites">Watching: Claude · ChatGPT · Gemini · Cursor · Hope AI<br>Add any other site from the panel's ⚙ settings.</div>
+      <button class="chime" id="chimeBtn"><span class="notes" aria-hidden="true"><i></i><i></i><i></i></span>Hear the chime you&rsquo;ll get</button>
+      <div class="sites">Watching: Claude · ChatGPT · Gemini · Cursor · Hope AI<br>Add any other site from the panel&rsquo;s ⚙ settings.</div>
       <div class="hint">Open the panel any time: click the toolbar icon, or press <span class="kbd">⌥⇧S</span></div>
-      <div class="priv">Private by design — everything runs on your device. Nothing is ever sent anywhere.</div>
+      <div class="priv">Private by design — everything stays on your device. Nothing is ever sent anywhere.</div>
     </div>
   </div>
 <script src="constants.js"></script>

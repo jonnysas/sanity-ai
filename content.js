@@ -93,24 +93,35 @@
   function showToast(t) {
     dismissToast();
     const tool = toastTool(t.site, t.host);
+    // Still Water: the toast follows the OS theme into the dark, and moves
+    // at settle pace (or not at all, under reduced motion).
+    const dark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const still = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const th = dark
+      ? { bg: "#211F27", line: "#34323C", t1: "#EDECEF", t2: "#9C99A6", chk: "#30d158", x: "#8A8794", xh: "#33313C", xhc: "#D2D0D8", shadow: "0 0 0 1px rgba(255,255,255,0.04), 0 14px 40px rgba(0,0,0,0.5)" }
+      : { bg: "#FDFCFA", line: "#ECEAE6", t1: "#1C1B22", t2: "#85828E", chk: "#34c759", x: "#B3B0BC", xh: "#F2F0EC", xhc: "#4A4852", shadow: "0 2px 6px rgba(28,27,34,0.06), 0 14px 36px rgba(40,40,70,0.18)" };
     const host = document.createElement("div");
     host.style.cssText = "all:initial;position:fixed;z-index:2147483647;bottom:20px;right:20px;";
     const root = host.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent =
       ".card{display:flex;align-items:center;gap:12px;width:300px;max-width:78vw;padding:13px 14px;" +
-      "background:#fbfbfd;border:1px solid #ececf1;border-radius:13px;box-shadow:0 12px 32px rgba(40,40,70,.20);" +
+      "background:" + th.bg + ";border:1px solid " + th.line + ";border-radius:14px;box-shadow:" + th.shadow + ";" +
       "cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;" +
-      "transform:translateX(24px);opacity:0;transition:transform .26s ease,opacity .26s ease;}" +
+      "font-variant-numeric:tabular-nums;" +
+      (still
+        ? "opacity:0;transition:opacity .12s linear;"
+        : "transform:translateX(16px);opacity:0;transition:transform .26s cubic-bezier(.16,1,.3,1),opacity .26s cubic-bezier(.16,1,.3,1);") +
+      "}" +
       ".card.in{transform:none;opacity:1;}" +
       ".av{position:relative;width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;}" +
-      ".chk{position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:#34c759;border:2px solid #fbfbfd;display:flex;align-items:center;justify-content:center;}" +
+      ".chk{position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:" + th.chk + ";border:2px solid " + th.bg + ";display:flex;align-items:center;justify-content:center;}" +
       ".chk svg{width:8px;height:8px;}" +
       ".tx{min-width:0;flex:1;}" +
-      ".t1{font-size:13.5px;font-weight:650;color:#1c1c22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
-      ".t2{font-size:11.5px;color:#86868f;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
-      ".x{flex:0 0 auto;border:none;background:none;color:#b9b9c0;font-size:14px;line-height:1;cursor:pointer;padding:4px;border-radius:6px;}" +
-      ".x:hover{background:#ececef;color:#555;}";
+      ".t1{font-size:13.5px;font-weight:650;letter-spacing:-0.006em;color:" + th.t1 + ";white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
+      ".t2{font-size:11.5px;color:" + th.t2 + ";margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
+      ".x{flex:0 0 auto;border:none;background:none;color:" + th.x + ";font-size:14px;line-height:1;cursor:pointer;padding:4px;border-radius:6px;}" +
+      ".x:hover{background:" + th.xh + ";color:" + th.xhc + ";}";
     const card = document.createElement("div"); card.className = "card";
     const av = document.createElement("div"); av.className = "av";
     av.style.background = tool.grad ? "linear-gradient(135deg,#6d5efc,#c43cdb)" : tool.color;
@@ -123,12 +134,15 @@
     t1.textContent = t.title || ((t.site || "Agent") + " finished");
     const t2 = document.createElement("div"); t2.className = "t2";
     const d = durText(t.durationMs);
-    t2.textContent = (t.site ? t.site : "") + (d ? " · took " + d : "") + " · click to jump back";
+    t2.textContent = (t.site ? t.site : "") + (d ? " \u00b7 took " + d : "") + " \u00b7 ready when you are";
     tx.append(t1, t2);
     const x = document.createElement("button"); x.className = "x"; x.textContent = "\u2715"; x.setAttribute("aria-label", "Dismiss");
     x.addEventListener("click", (e) => { e.stopPropagation(); dismissToast(); });
     card.append(av, tx, x);
     card.addEventListener("click", () => { send({ type: "focusTab", tabId: t.jumpTabId, url: t.url }); dismissToast(); });
+    // Hovering pauses the clock — the toast waits while you read.
+    card.addEventListener("mouseenter", () => { if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; } });
+    card.addEventListener("mouseleave", () => { if (toastHost === host && !toastTimer) toastTimer = setTimeout(dismissToast, 4000); });
     root.append(style, card);
     (document.body || document.documentElement).appendChild(host);
     toastHost = host;

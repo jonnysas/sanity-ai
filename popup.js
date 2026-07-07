@@ -63,6 +63,17 @@
     return rm ? `${h}h ${rm}m` : `${h}h`;
   }
 
+  // Compact duration for the meta-line readouts: minute precision reads
+  // calmer than "18m 50s", and the exact figure lives in the tooltip.
+  function fmtDurShort(ms) {
+    const s = Math.round(ms / 1000);
+    if (s < 60) return s + "s";
+    const m = Math.round(s / 60);
+    if (m < 60) return m + "m";
+    const h = Math.floor(m / 60), rm = m % 60;
+    return rm ? `${h}h ${rm}m` : `${h}h`;
+  }
+
   // Live ticking clock for running items (M:SS / H:MM:SS).
   function clock(ms) {
     const s = Math.max(0, Math.floor(ms / 1000));
@@ -82,11 +93,14 @@
     return { color: "#6366f1", ring: "#6366f1", glyph: "\u2022" };
   }
 
+  // The mark at rest: a soft sun settling behind a still horizon (echoes the icon).
   const SPARKLE = '<svg viewBox="0 0 48 48">' +
-    '<defs><radialGradient id="ob" cx="0.42" cy="0.40" r="0.72">' +
-    '<stop offset="0" stop-color="#b9b4ee"/><stop offset="1" stop-color="#7c77c9"/></radialGradient></defs>' +
-    '<circle cx="24" cy="24" r="20.5" fill="none" stroke="#a39bd6" stroke-width="1.4" opacity="0.5"/>' +
-    '<circle cx="24" cy="24" r="12" fill="url(#ob)"/></svg>';
+    '<defs><radialGradient id="ob" cx="0.42" cy="0.38" r="0.75">' +
+    '<stop offset="0" stop-color="#b9b4ee"/><stop offset="1" stop-color="#7c77c9"/></radialGradient>' +
+    '<clipPath id="obc"><rect x="0" y="0" width="48" height="29.5"/></clipPath></defs>' +
+    '<circle cx="24" cy="23" r="10" fill="url(#ob)" clip-path="url(#obc)"/>' +
+    '<line x1="8" y1="29.5" x2="40" y2="29.5" stroke="#a9a3de" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>' +
+    '<line x1="18.5" y1="34.5" x2="29.5" y2="34.5" stroke="#a9a3de" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/></svg>';
 
   let liveRunEls = [];   // running time spans to tick each second
   let tickTimer = null;
@@ -158,21 +172,21 @@
       const multi = it.turns > 1 && it.totalMs;
       const dur = document.createElement("span");
       dur.className = "dur";
-      dur.title = multi ? "This turn" : "Time to complete";
+      dur.title = (multi ? "This turn: " : "Time to complete: ") + fmtDur(it.durationMs);
       dur.innerHTML =
         '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
         '<circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="2"/>' +
         '<path d="M12 9v4l2.5 1.5M9 2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
         '<span></span>';
-      dur.lastChild.textContent = fmtDur(it.durationMs);
-      row.append(dur);
+      dur.lastChild.textContent = fmtDurShort(it.durationMs);
+      meta.append(dur); // on the meta line: the title never yields width to a chip
       if (multi) {
         const tot = document.createElement("span");
         tot.className = "dur total";
-        tot.title = "Total across " + it.turns + " turns";
+        tot.title = "Total across " + it.turns + " turns: " + fmtDur(it.totalMs);
         tot.innerHTML = '<span class="sig">\u03A3</span><span></span>';
-        tot.lastChild.textContent = fmtDur(it.totalMs);
-        row.append(tot);
+        tot.lastChild.textContent = fmtDurShort(it.totalMs);
+        meta.append(tot);
       }
     }
 
@@ -294,15 +308,30 @@
     tickTimer = setInterval(tick, 1000);
   }
 
-  // Reassurance line — the emotional core: relax, or here's the one thing for you.
-  function renderStatus(running, waiting) {
+  // Reassurance line — the emotional core: the one thing that needs you,
+  // or explicit permission to look away.
+  function renderStatus(running, waiting, blocked) {
     const el = document.getElementById("status");
     if (!el) return;
     el.innerHTML = "";
     let tone = "", strong = "", rest = "";
-    if (waiting > 0) { tone = "wait"; strong = waiting + (waiting === 1 ? " waiting for you" : " waiting for you"); rest = running > 0 ? "  ·  " + running + " still working" : ""; }
-    else if (running > 0) { tone = "run"; strong = running + (running === 1 ? " agent working" : " agents working"); rest = " — I\u2019ll let you know"; }
-    else { el.style.display = "none"; return; }
+    const restParts = [];
+    if (blocked > 0) {
+      tone = "input";
+      strong = blocked + (blocked === 1 ? " needs a word from you" : " need a word from you");
+      if (waiting > 0) restParts.push(waiting + " ready");
+      if (running > 0) restParts.push(running + " still working");
+      rest = restParts.length ? "  ·  " + restParts.join("  ·  ") : "";
+    } else if (waiting > 0) {
+      tone = "wait";
+      strong = waiting + " ready for you";
+      if (running > 0) restParts.push(running + " still working");
+      rest = restParts.length ? "  ·  " + restParts.join("  ·  ") : "";
+    } else if (running > 0) {
+      tone = "run";
+      strong = running + (running === 1 ? " agent working" : " agents working");
+      rest = " — I\u2019ll chime when " + (running === 1 ? "it\u2019s" : "they\u2019re") + " done.";
+    } else { el.style.display = "none"; return; }
     el.style.display = "";
     el.className = "status " + tone;
     const a = document.createElement("span"); a.className = "s-strong"; a.textContent = strong;
@@ -314,6 +343,23 @@
     if (PANEL) return;
     document.querySelectorAll(".open-panel").forEach((el) => {
       el.style.display = (gotState && panelEnabled && !panelOpenNow) ? "" : "none";
+    });
+  }
+
+  // The exhale line: when the fleet is empty, quietly total what the agents
+  // did today — the moment of nothing-to-do becomes proof the system worked.
+  function appendTodayLine(card) {
+    if (!hasStorage || !card) return;
+    chrome.storage.local.get("stats", (r) => {
+      if (chrome.runtime.lastError) return;
+      const stats = r && r.stats;
+      const day = new Date().toISOString().slice(0, 10);
+      const d = stats && stats.days && stats.days[day];
+      if (!d || !d.ms || d.ms < 60000 || !card.isConnected) return;
+      const el = document.createElement("div");
+      el.className = "today";
+      el.textContent = "Your agents worked " + fmtDur(d.ms) + " for you today.";
+      card.appendChild(el);
     });
   }
 
@@ -329,7 +375,7 @@
     lastState = state;
     liveRunEls = [];
 
-    renderStatus(running.length, waiting.length + blocked.length);
+    renderStatus(running.length, waiting.length, blocked.length);
     updateCtaVisibility();
     live.textContent = "";
 
@@ -338,7 +384,7 @@
     if (!PANEL && panelOpenNow) {
       const note = document.createElement("div");
       note.className = "panel-open-note";
-      note.innerHTML = '<span>Your live fleet is open in the side panel.</span>';
+      note.innerHTML = '<span>Already on it — your fleet is live in the side panel.</span>';
       live.appendChild(note);
       startTicker();
       return;
@@ -347,8 +393,9 @@
     if (!running.length && !waiting.length && !blocked.length && !history.length) {
       live.innerHTML =
         '<div class="clear"><div class="mark">' + SPARKLE + '</div>' +
-        '<div class="big">All clear</div>' +
-        '<div class="sub">Nothing running or waiting on you.</div></div>';
+        '<div class="big">All quiet.</div>' +
+        '<div class="sub">Nothing needs you right now.</div></div>';
+      appendTodayLine(live.querySelector(".clear"));
       prevKeys = new Set();
       startTicker();
       return;
@@ -356,9 +403,9 @@
 
     // Order by urgency: what needs you first, then ambient, then reference.
     if (blocked.length) live.appendChild(block("Needs your input", blocked.length, blocked, "input"));
-    if (waiting.length) live.appendChild(block("Waiting for you", waiting.length, waiting, "wait"));
-    if (running.length) live.appendChild(block("Running now", running.length, running, "run"));
-    if (history.length) live.appendChild(block("Recently finished", history.length, history, "recent"));
+    if (waiting.length) live.appendChild(block("Ready for you", waiting.length, waiting, "wait"));
+    if (running.length) live.appendChild(block("Running", running.length, running, "run"));
+    if (history.length) live.appendChild(block("Done earlier", history.length, history, "recent"));
 
     // Animate only genuinely new rows (so peripheral vision catches changes).
     const curKeys = new Set();
@@ -404,7 +451,7 @@
       const agg = (r && r[SAN.KEYS.SITE_STATS]) || {};
       const rows = Object.values(agg).filter((a) => a && a.runs > 0)
         .sort((a, b) => b.runs - a.runs);
-      if (!rows.length) { box.innerHTML = '<div class="ss-empty">No runs recorded yet.</div>'; return; }
+      if (!rows.length) { box.innerHTML = '<div class="ss-empty">No runs yet — hand something off and I’ll start counting.</div>'; return; }
       box.innerHTML = rows.map((a) => {
         const name = a.site || "Other";
         const avg = a.runs ? a.totalMs / a.runs : 0;
@@ -463,7 +510,7 @@
       }
       if (!runs) { box.style.display = "none"; return; }
       const fmt = (v) => { const s = Math.round(v / 1000); if (s < 60) return s + "s"; const m = Math.floor(s / 60); if (m < 60) return m + "m"; const h = Math.floor(m / 60); return h + "h " + (m % 60) + "m"; };
-      let html = '<span class="wk-label">THIS WEEK</span><span><b>' + runs + '</b> run' + (runs === 1 ? "" : "s") + '</span><span>\u00B7</span><span><b>' + fmt(ms) + '</b> agent time</span>';
+      let html = '<span class="wk-label">GIVEN BACK</span><span><b>' + runs + '</b> run' + (runs === 1 ? "" : "s") + '</span><span>\u00B7</span><span><b>' + fmt(ms) + '</b> you didn\u2019t have to watch</span>';
       if (stats.longest && stats.longest.ms > 0) html += '<span>\u00B7</span><span>longest <b>' + fmt(stats.longest.ms) + '</b>' + (stats.longest.site ? ' (' + stats.longest.site + ')' : '') + '</span>';
       box.innerHTML = html;
       box.style.display = "";
