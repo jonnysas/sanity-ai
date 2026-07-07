@@ -1,0 +1,100 @@
+{
+  "manifest_version": 3,
+  "name": "Sanity AI",
+  "version": "2.33.0",
+  "description": "Get a chime and a live overview the moment your AI agents finish working. Stay sane working with AI tools.",
+  "author": "Yonatan Sason",
+  "permissions": [
+    "notifications",
+    "storage",
+    "offscreen",
+    "sidePanel",
+    "scripting",
+    "tabs"
+  ],
+  "commands": {
+    "toggle_panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Open or close the Sanity side panel"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://bit.cloud/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://cursor.com/*",
+        "https://www.cursor.com/*"
+      ],
+      "js": [
+        "constants.js",
+        "profiles.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://bit.cloud/*"
+      ],
+      "js": [
+        "constants.js",
+        "collapse.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://bit.cloud/*",
+        "https://gemini.google.com/*",
+        "https://claude.ai/*",
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "nethook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "https://bit.cloud/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://cursor.com/*",
+    "https://www.cursor.com/*"
+  ]
+}
