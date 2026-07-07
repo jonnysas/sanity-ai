@@ -41,7 +41,9 @@ approval — you'll know. That's the whole product: **the checking, delegated.**
 | 🔔 **A chime** | Three soft notes (C–E–G) when a run completes. You'll learn the sound of *done* in a day. |
 | 💬 **A gentle nudge** | An OS notification and an in-page toast — click either to jump straight back to the conversation, even if you closed the tab. |
 | ✅ **Marks where you look** | A ✅ on the finished tab's title (❓ when an agent is waiting on your approval) and a count on the toolbar icon. |
-| 🛬 **A live fleet view** | The side panel (`⌥⇧S`) shows every session by urgency: **Needs your input**, **Ready for you**, **Running** (with live clocks), **Done earlier**. Star the important ones, rename anything, click to fly there. |
+| 🛬 **A live fleet view** | The side panel (`⌥⇧S`) shows every session by urgency: **Needs your input**, **Ready for you**, **Running**, **Done earlier**. Star the important ones, rename anything, click to fly there. |
+| 🔮 **Expectation, not just elapsed** | Running rows answer the real question: `running 2:10 · usually ~4m` — computed from your own past runs on that site, locally. When a run passes 1.6× the average it quietly says `longer than usual`. |
+| 🏷️ **Sessions named by their task** | When a tab title is just "Hope AI \| bit.cloud", Sanity names the session by the prompt you handed off instead — a list of jobs, not a pile of tabs. |
 | ⏱️ **Time given back** | Local stats reframed the way they should be: *"23 runs · 3h 12m you didn't have to watch."* Export every run to CSV whenever you want. |
 | 🤫 **All quiet.** | And when nothing needs you, Sanity says exactly that — and lets you go. |
 

@@ -267,7 +267,7 @@ async function recordCompletion(tabId, msg, windowId) {
   }
   await chrome.storage.session.set({ [TOTALS_KEY]: totals });
 
-  const tag = { title: msg.title, site: msg.site, host: msg.host, url: msg.url, durationMs: last, totalMs: t.totalMs, turns: t.turns };
+  const tag = { title: msg.title, site: msg.site, host: msg.host, url: msg.url, durationMs: last, totalMs: t.totalMs, turns: t.turns, prompt: (typeof msg.prompt === "string" ? msg.prompt.slice(0, 300) : null) };
   if (msg.hidden && msg.badge) await addWaiting(tabId, { ...tag, windowId });
   await pushHistory({ ...tag, tabId });
   await recordAnalytics({ ts: Date.now(), host: msg.host || "", site: msg.site || "", title: msg.title || "", durationMs: last, totalMs: t.totalMs, turns: t.turns, startMs: (typeof msg.startMs === "number" ? msg.startMs : null), prompt: (typeof msg.prompt === "string" ? msg.prompt.slice(0, 300) : null) });
@@ -399,14 +399,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 
     case "running":
-      if (msg.on) { addRunning(tabId, { title: msg.title, site: msg.site, host: msg.host, url: msg.url, windowId }); lastDone.delete(tabId); removeBlocked(tabId); }
+      if (msg.on) { addRunning(tabId, { title: msg.title, site: msg.site, host: msg.host, url: msg.url, windowId, prompt: (typeof msg.prompt === "string" ? msg.prompt.slice(0, 300) : null) }); lastDone.delete(tabId); removeBlocked(tabId); }
       else removeRunning(tabId);
       return;
 
     case "blocked": {
       if (!msg.on) { removeBlocked(tabId); return; }
       (async () => {
-        const isNew = await addBlocked(tabId, { title: msg.title, site: msg.site, host: msg.host, url: msg.url, windowId });
+        const isNew = await addBlocked(tabId, { title: msg.title, site: msg.site, host: msg.host, url: msg.url, windowId, prompt: (typeof msg.prompt === "string" ? msg.prompt.slice(0, 300) : null) });
         if (!isNew) return; // heartbeat refresh — don't re-alert
         if (msg.chime) playChime();
         if (msg.notif && msg.hidden && HAS_NOTIFICATIONS) {

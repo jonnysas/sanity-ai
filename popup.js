@@ -112,14 +112,27 @@
   let lastState = null;
   let customLabels = {};      // { [convId]: "custom display name" }
   let starred = {};           // { [convId]: true } — highlighted sessions
+  let siteAvg = {};           // host -> average run ms (from local siteStats)
 
   // A session's stable identity: host + path (survives tab id changes / reopen).
   function convOf(it) {
     try { const u = new URL(it.url); return u.host + u.pathname; } catch (e) { return (it.host || "") + ":" + it.tabId; }
   }
+  // Tab titles are often just the tool's name ("Hope AI | bit.cloud") — a pile
+  // of tabs, not a list of jobs. When the title says nothing, name the session
+  // by its task: the prompt the user actually handed off (captured locally).
+  const GENERIC_TITLE_RE = /^(hope\s*ai(\s*[|·-].*)?|bit\.cloud|claude(\s*[|·-].*)?|chatgpt|chat\s*gpt|gemini|google\s+gemini|cursor|new\s+(chat|conversation|thread)|untitled.*|home)$/i;
+  function bestName(it) {
+    const t = (it.title || "").trim();
+    const p = (it.prompt || "").trim().replace(/\s+/g, " ");
+    const generic = !t || GENERIC_TITLE_RE.test(t) || t.toLowerCase() === (it.site || "").trim().toLowerCase();
+    if (!generic) return t;
+    if (p) return p.length > 90 ? p.slice(0, 90).trimEnd() + "…" : p;
+    return t || it.site || "Session";
+  }
   function displayName(it) {
     const key = convOf(it);
-    return (customLabels[key] && customLabels[key].trim()) || it.title || it.site || "Session";
+    return (customLabels[key] && customLabels[key].trim()) || bestName(it);
   }
   function persistLabels() { try { chrome.storage.local.set({ labels: customLabels }); } catch (e) {} }
   function persistStarred() { try { chrome.storage.local.set({ starred }); } catch (e) {} }
@@ -160,6 +173,19 @@
       time.textContent = " · " + rel(it.ts, kind);
     }
     meta.append(site, time);
+    // Expectation, not just elapsed — "usually ~4m" answers the real question:
+    // should I wait, or walk away? (average of this site's past runs, local)
+    if (kind === "run") {
+      const avg = siteAvg[(it.host || "").toLowerCase()];
+      if (avg && avg > 15000) {
+        const eta = document.createElement("span");
+        eta.className = "eta";
+        const over = Date.now() - it.ts > avg * 1.6;
+        eta.textContent = over ? "· longer than usual" : "· usually ~" + fmtDurShort(avg);
+        eta.title = "Typical run on " + (it.site || it.host || "this site") + ": " + fmtDur(avg);
+        meta.append(eta);
+      }
+    }
     body.append(title, meta);
 
     const go = () => { if (canMessage) chrome.runtime.sendMessage({ type: "focusTab", tabId: it.tabId, url: it.url }); if (!PANEL) window.close(); };
@@ -427,11 +453,18 @@
         render(st);
       });
     };
-    // Personalization (custom names + highlighted sessions) lives in local storage.
+    // Personalization (custom names + stars) and per-site averages (for the
+    // "usually ~4m" expectation line) live in local storage.
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(["labels", "starred"], (r) => {
+      chrome.storage.local.get(["labels", "starred", SAN.KEYS.SITE_STATS], (r) => {
         customLabels = (r && r.labels) || {};
         starred = (r && r.starred) || {};
+        siteAvg = {};
+        const agg = (r && r[SAN.KEYS.SITE_STATS]) || {};
+        for (const host of Object.keys(agg)) {
+          const a = agg[host];
+          if (a && a.runs >= 3 && a.totalMs > 0) siteAvg[host.toLowerCase()] = a.totalMs / a.runs;
+        }
         fetchState();
       });
     } else { fetchState(); }

@@ -330,7 +330,9 @@
   }
   function reportRunning(on) {
     if (on) lastRunPing = Date.now();
-    send({ type: "running", on, title: cleanTitle(), site: profile.label, host: location.host, url: location.href });
+    // The captured prompt rides along so the fleet can name the session by
+    // its task ("Add CSV export…") when the tab title is generic.
+    send({ type: "running", on, title: cleanTitle(), site: profile.label, host: location.host, url: location.href, prompt: netPrompt || undefined });
   }
   function reportBlocked(on) {
     if (on) lastRunPing = Date.now();
@@ -338,6 +340,7 @@
       type: "blocked", on,
       chime: prefs.chime, notif: prefs.notif, badge: prefs.badge, hidden: document.hidden,
       title: cleanTitle(), site: profile.label, host: location.host, url: location.href,
+      prompt: netPrompt || undefined,
       convId: location.host + location.pathname,
     });
   }
