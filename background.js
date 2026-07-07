@@ -201,33 +201,76 @@ async function listWaiting() {
     .map(([tabId, v]) => ({ tabId: Number(tabId), ...v }))
     .sort((a, b) => b.ts - a.ts); // newest first
 }
+// Raise a window and report whether the raise actually took. On Chromium forks
+// (Dia/Arc) — and on any Chromium when the call comes from a background service
+// worker while another app is frontmost — chrome.windows.update({focused:true})
+// is a documented no-op that degrades to a dock bounce (Chrome 13+, WontFix).
+// getLastFocused is the best available signal that the OS honored the raise; it
+// can false-positive, so treat `true` as "probably" and `false` as "definitely
+// didn't" — the caller only escalates on a definite miss.
 async function focusWindow(winId) {
-  if (typeof winId !== "number") return;
-  // Bring the window to the front — restoring it first if it's minimized.
+  if (typeof winId !== "number") return false;
   try {
     const win = await chrome.windows.get(winId);
     const upd = { focused: true };
-    if (win && win.state === "minimized") upd.state = "normal";
+    if (win && win.state === "minimized") upd.state = "normal"; // can't focus a minimized window
     await chrome.windows.update(winId, upd);
   } catch (e) { try { await chrome.windows.update(winId, { focused: true }); } catch (e2) {} }
+  try {
+    const last = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    return !!(last && last.id === winId);
+  } catch (e) { return false; }
 }
+
+// The window the user is actually looking at — the move target for the fallback.
+async function currentWindowId() {
+  try {
+    const w = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+    if (w && typeof w.id === "number") return w.id;
+  } catch (e) {}
+  return (typeof focusedWindowId === "number" && focusedWindowId !== chrome.windows.WINDOW_ID_NONE)
+    ? focusedWindowId : null;
+}
+
 async function focusTab(tabId, url) {
   const w = await getWaiting();
   const entry = w[tabId];
   const reopen = url || (entry && entry.url);
+  let action = "none";
   try {
     // Resolve the tab's *current* window (it may have moved since we recorded it).
     const t = await chrome.tabs.get(tabId); // throws if the tab is gone
     const winId = (t && typeof t.windowId === "number") ? t.windowId : (entry && entry.windowId);
-    // Window FIRST, then the tab: activating a tab does not raise its window,
-    // so a cross-window jump must lead with the window itself.
-    await focusWindow(winId);
-    await chrome.tabs.update(tabId, { active: true });
-    // Re-assert shortly after: when the click came from the popup, the popup
-    // closes right about now and Chrome hands focus back to the popup's own
-    // window — which used to swallow jumps to any other window.
-    if (typeof winId === "number") {
-      setTimeout(() => { focusWindow(winId); }, 150);
+    const here = await currentWindowId();
+
+    if (typeof winId === "number" && here !== null && winId === here) {
+      // Already in the window you're looking at — just select the tab.
+      await chrome.tabs.update(tabId, { active: true });
+      action = "activate";
+    } else {
+      // Cross-window. Activate the tab, then try the native window raise —
+      // a clean jump on real Chrome, which preserves your window layout.
+      await chrome.tabs.update(tabId, { active: true });
+      const raised = await focusWindow(winId);
+      if (!raised && here !== null) {
+        // The raise didn't take (Dia/Arc no-op). Bring the tab to you instead:
+        // relocate it into the window you're in, then activate. Sidesteps the
+        // window-focus limitation entirely.
+        try {
+          await chrome.tabs.move(tabId, { windowId: here, index: -1 });
+          await chrome.tabs.update(tabId, { active: true });
+          action = "moved";
+        } catch (e) {
+          if (reopen) { try { await chrome.tabs.create({ windowId: here, url: reopen, active: true }); action = "reopened"; } catch (e2) {} }
+        }
+      } else if (typeof winId === "number") {
+        action = "raised";
+        // Re-assert once: if the click came from the popup, the popup closes
+        // right about now and Chrome hands focus back to the popup's own window.
+        setTimeout(() => { focusWindow(winId); }, 150);
+      }
+      // Low-noise trace so the fork behavior is confirmable from the SW console.
+      try { console.debug("[Sanity] focusTab", { winId, here, raised, action }); } catch (e) {}
     }
   } catch (e) {
     // Tab was closed — reopen the conversation in a new tab if we know its URL.
