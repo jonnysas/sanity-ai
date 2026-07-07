@@ -127,15 +127,23 @@
     const av = document.createElement("div"); av.className = "av";
     av.style.background = tool.grad ? "linear-gradient(135deg,#6d5efc,#c43cdb)" : tool.color;
     av.textContent = tool.glyph;
+    // Badge tells the truth: green check = done; amber ? = paused on you.
     const chk = document.createElement("div"); chk.className = "chk";
-    chk.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if (t.input) {
+      chk.style.background = dark ? "#E9A02C" : "#F59E0B";
+      chk.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.5-1.5 1-1.5 2.1M12 17.2h.01" stroke="#3D2A05" stroke-width="2.6" stroke-linecap="round"/></svg>';
+    } else {
+      chk.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
     av.appendChild(chk);
     const tx = document.createElement("div"); tx.className = "tx";
     const t1 = document.createElement("div"); t1.className = "t1";
-    t1.textContent = t.title || ((t.site || "Agent") + " finished");
+    t1.textContent = t.title || ((t.site || "Agent") + (t.input ? " needs you" : " finished"));
     const t2 = document.createElement("div"); t2.className = "t2";
     const d = durText(t.durationMs);
-    t2.textContent = (t.site ? t.site : "") + (d ? " \u00b7 took " + d : "") + " \u00b7 ready when you are";
+    t2.textContent = t.input
+      ? (t.site ? t.site : "") + " \u00b7 waiting on your approval"
+      : (t.site ? t.site : "") + (d ? " \u00b7 took " + d : "") + " \u00b7 ready when you are";
     tx.append(t1, t2);
     const x = document.createElement("button"); x.className = "x"; x.textContent = "\u2715"; x.setAttribute("aria-label", "Dismiss");
     x.addEventListener("click", (e) => { e.stopPropagation(); dismissToast(); });
