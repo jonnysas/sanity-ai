@@ -372,6 +372,63 @@
     });
   }
 
+  // ── The weekly receipt ─────────────────────────────────────────
+  // Once a week, the gray stats become a small ceremony: proof that
+  // delegation worked. Rules that keep it calm: computed from the local
+  // run log only; needs a real week behind it; never shown while
+  // something needs your input; one tap dismisses it until next week.
+  let receiptDecided = false;
+  function weekKeyOf(ts) {
+    // ISO week key, e.g. "2026-W28"
+    const d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    const wn = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+    return d.getFullYear() + "-W" + String(wn).padStart(2, "0");
+  }
+  function maybeRenderReceipt(blockedCount) {
+    if (receiptDecided) return;
+    receiptDecided = true;
+    if (blockedCount > 0) return; // never celebrate while something needs you
+    const box = document.getElementById("receipt");
+    if (!box || !hasStorage) return;
+    chrome.storage.local.get(["receiptSeen", SAN.KEYS.RUN_LOG], (r) => {
+      if (chrome.runtime.lastError) return;
+      const wk = weekKeyOf(Date.now());
+      if (r && r.receiptSeen === wk) return;
+      const log = Array.isArray(r && r[SAN.KEYS.RUN_LOG]) ? r[SAN.KEYS.RUN_LOG] : [];
+      const cutoff = Date.now() - 7 * 86400000;
+      const week = log.filter((e) => e && e.ts >= cutoff && e.durationMs > 0);
+      if (week.length < 5) return;
+      let total = 0, longest = null;
+      const bySite = {};
+      for (const e of week) {
+        total += e.durationMs;
+        if (!longest || e.durationMs > longest.durationMs) longest = e;
+        const s = e.site || e.host || "Other";
+        bySite[s] = (bySite[s] || 0) + e.durationMs;
+      }
+      if (total < 10 * 60000) return; // under ten minutes — let it be
+      const top = Object.entries(bySite).sort((a, b) => b[1] - a[1])[0];
+      box.innerHTML =
+        '<div class="rc-mark">' + SPARKLE + '</div>' +
+        '<div class="rc-body">' +
+        '<div class="rc-eyebrow">Your week, given back</div>' +
+        '<div class="rc-line">Your agents worked <b>' + esc(fmtDur(total)) + '</b> while you didn’t watch.</div>' +
+        '<div class="rc-sub">' + week.length + ' runs · longest walk-away ' + esc(fmtDurShort(longest.durationMs)) +
+        (longest.site ? ' (' + esc(longest.site) + ')' : '') +
+        (top && top[0] !== longest.site ? ' · mostly ' + esc(top[0]) : '') + '</div>' +
+        '</div>' +
+        '<button class="rc-ok" type="button">Nice.</button>';
+      box.querySelector(".rc-ok").addEventListener("click", () => {
+        try { chrome.storage.local.set({ receiptSeen: wk }); } catch (e) {}
+        box.style.display = "none";
+      });
+      box.style.display = "";
+    });
+  }
+
   // The exhale line: when the fleet is empty, quietly total what the agents
   // did today — the moment of nothing-to-do becomes proof the system worked.
   function appendTodayLine(card) {
@@ -402,6 +459,7 @@
     liveRunEls = [];
 
     renderStatus(running.length, waiting.length, blocked.length);
+    maybeRenderReceipt(blocked.length);
     updateCtaVisibility();
     live.textContent = "";
 
