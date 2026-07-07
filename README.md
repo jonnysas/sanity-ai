@@ -45,6 +45,7 @@ approval — you'll know. That's the whole product: **the checking, delegated.**
 | 🔮 **Expectation, not just elapsed** | Running rows answer the real question: `running 2:10 · usually ~4m` — computed from your own past runs on that site, locally. When a run passes 1.6× the average it quietly says `longer than usual`. |
 | 🏷️ **Sessions named by their task** | When a tab title is just "Hope AI \| bit.cloud", Sanity names the session by the prompt you handed off instead — a list of jobs, not a pile of tabs. |
 | ⏱️ **Time given back** | Local stats reframed the way they should be: *"23 runs · 3h 12m you didn't have to watch."* Export every run to CSV whenever you want. |
+| 🧾 **The weekly receipt** | Once a week, a small card totals the proof: *"Your agents worked 25h 29m while you didn't watch — longest walk-away 1h 44m."* One tap and it's gone until next week, and it never appears while something needs your input. |
 | 🤫 **All quiet.** | And when nothing needs you, Sanity says exactly that — and lets you go. |
 
 <div align="center">
