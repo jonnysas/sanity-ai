@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sanity AI</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       Sanity AI — "Still Water" design system
+       One idea: the UI itself should lower your heart rate.
+       Warm paper neutrals · one indigo accent · amber only when
+       something needs you · motion at breathing pace · numerals
+       that never jitter. Urgency is the one still, warm thing on
+       an otherwise cool, breathing surface.
+       ═══════════════════════════════════════════════════════════ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #FAF9F7;
+      --bg-wash: radial-gradient(120% 90% at 50% -10%, #F3F1FB 0%, #FAF9F7 55%);
+      --card: #FFFFFF;
+      --ink: #1C1B22;
+      --ink-2: #4A4852;
+      --muted: #6E6B78;
+      --faint: #B3B0BC;
+      --line: #ECEAE6;
+      --line-soft: #F2F0EC;
+      --accent: #4F46E5;
+      --accent-ink: #4338CA;
+      --accent-soft: #EFEDFC;
+      --accent-wash: #F9F8FE;
+      --accent-line: #E7E4F6;
+      --alert: #B45309;          /* amber as text — contrast-safe */
+      --alert-marker: #F59E0B;   /* amber as marker/fill */
+      --alert-soft: #FFF9EE;
+      --alert-line: #F0E2C4;
+      --success: #1FA855;
+      --star: #DB8B00;
+      --star-tint: rgba(219, 139, 0, 0.07);
+      --hope-a: #6D5EFC;
+      --hope-b: #C43CDB;
+      --hover: #F4F2EF;
+      --chip-line: #E5E3DE;
+      --shadow-card: 0 1px 2px rgba(28,27,34,0.04), 0 4px 14px rgba(80,75,140,0.05);
+      --shadow-alert: 0 2px 10px rgba(245,158,11,0.07);
+      --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+    }
+    html, body { width: 360px; margin: 0 auto; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+      font-variant-numeric: tabular-nums; /* ticking clocks must never jiggle */
+      padding: 14px 16px 14px;
+      background: var(--bg);
+      background-image: var(--bg-wash);
+      background-repeat: no-repeat;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.45;
+    }
+
+    /* ── Header: quiet chrome, a hairline separates it from the board ── */
+    .header { display: flex; align-items: center; gap: 10px; margin: 0 -16px 14px; padding: 2px 16px 12px; border-bottom: 1px solid var(--line-soft); }
+    .header img { width: 28px; height: 28px; border-radius: 8px; display: block; }
+    .header h1 { font-size: 15px; font-weight: 680; letter-spacing: -0.015em; color: var(--ink); }
+    .header .version { font-size: 10.5px; font-weight: 500; color: var(--muted); margin-left: auto; }
+    .gear { display: flex; align-items: center; justify-content: center; margin-left: 2px; width: 30px; height: 30px; padding: 0; border: none; background: transparent; color: var(--faint); cursor: pointer; border-radius: 8px; transition: background .15s, color .15s; }
+    .gear:hover { background: var(--accent-soft); color: var(--accent); }
+    .gear.active { background: var(--accent-soft); color: var(--accent); }
+    .gear svg { display: block; }
+    .gear:focus-visible { outline: none; box-shadow: var(--focus); }
+
+    /* ── The one sentence the user actually reads ── */
+    .status { font-size: 13px; margin: 0 2px 14px; line-height: 1.45; }
+    .status .s-strong { font-weight: 650; }
+    .status .s-rest { color: var(--muted); font-weight: 450; }
+    .status.input .s-strong { color: var(--alert); }
+    .status.wait .s-strong { color: var(--accent); }
+    .status.run .s-strong { color: var(--ink-2); }
+
+    /* ── Zones ─────────────────────────────────────────────────
+       Amber card = needs you (the only tinted, motionless thing).
+       Indigo wash = ready for you (a gift shelf, one tone quieter).
+       Plain card  = running (ambient weather).
+       Bare ledger = done earlier (reference, not action).           */
+    .live { margin-bottom: 14px; }
+    .live-block + .live-block { margin-top: 16px; }
+    .live-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 5px; box-shadow: var(--shadow-card); }
+
+    .eyebrow {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 7px 3px; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .eb-label { display: inline-flex; align-items: center; gap: 6px; }
+    .eyebrow .n {
+      background: var(--line-soft); color: var(--muted); font-size: 10px; font-weight: 700;
+      padding: 1px 7px; border-radius: 9px; letter-spacing: 0; min-width: 18px; text-align: center;
+    }
+    .clear-btn {
+      border: none; background: none; font: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--muted); cursor: pointer; padding: 2px 6px; border-radius: 6px; margin-right: 2px;
+    }
+    .clear-btn:hover { color: var(--accent); background: var(--accent-soft); }
+    .clear-btn:focus-visible, .show-more:focus-visible, .open-cta:focus-visible, .add-site button:focus-visible, .hc-b:focus-visible { outline: none; box-shadow: var(--focus); }
+
+    /* needs your input — the only loud zone, and it is perfectly still */
+    .eyebrow.input { color: var(--alert); }
+    .eyebrow.input .n { background: var(--alert-marker); color: #3D2A05; }
+    .live-card.input { background: var(--alert-soft); border-color: var(--alert-line); box-shadow: var(--shadow-alert); }
+    .live-card.input .item { padding-left: 15px; }
+    .live-card.input .item::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: var(--alert-marker); }
+    .avatar.input { background: var(--alert-marker); }
+
+    /* ready for you — finished work, presented as a gift */
+    .eyebrow.wait { color: var(--accent); }
+    .eyebrow.wait .n { background: var(--accent); color: #fff; }
+    .live-card.wait { background: var(--accent-wash); border-color: var(--accent-line); }
+
+    /* running — ambient; the quietest card on the board */
+    .live-card.run { box-shadow: none; border-color: var(--line-soft); }
+
+    /* done earlier — a ledger, not a card */
+    .live-block.recent:not(:first-child) { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .eyebrow.recent { color: var(--muted); }
+    .eyebrow.recent .n { background: var(--line-soft); color: var(--muted); }
+    .live-card.recent { background: transparent; border-color: transparent; box-shadow: none; padding: 0; border-radius: 0; }
+    .live-card.recent .item + .item { border-top: 1px solid var(--line-soft); margin-top: 0; }
+    .live-card.recent .item { border-radius: 8px; }
+    .live-card.recent .item-title { color: var(--ink-2); font-weight: 560; }
+    .live-card.recent .item.hope::before { opacity: 0.35; }
+    .live-card.recent .item.hope .item-title { background: none; -webkit-text-fill-color: var(--ink-2); color: var(--ink-2); }
+    .live-card.recent .item.hope .site { background: none; -webkit-text-fill-color: var(--muted); color: var(--muted); }
+
+    /* ── Fleet rows ── */
+    .item { display: flex; align-items: center; gap: 11px; padding: 10px 9px; min-height: 44px; cursor: pointer; border-radius: 10px; position: relative; transition: background 0.12s ease; }
+    .item + .item { margin-top: 1px; }
+    .item:hover { background: var(--hover); }
+    .item:focus-visible { outline: none; box-shadow: var(--focus); }
+    .item-body { min-width: 0; flex: 1; }
+    .item-title { font-size: 13.5px; font-weight: 580; letter-spacing: -0.006em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-top: 2.5px; min-width: 0; white-space: nowrap; }
+    /* the site name may ellipsize under pressure, but it never vanishes */
+    .item-meta > span:first-child { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 34px; }
+    .item-meta > span:nth-child(2) { flex-shrink: 0; }
+
+    /* tool identity avatar; running rows breathe (~15 breaths/min) */
+    .avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; position: relative; }
+    .avatar.recent { opacity: 0.45; filter: saturate(0.6); }
+    .avatar.run::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--ring); animation: breathe 4000ms cubic-bezier(0.37, 0, 0.63, 1) infinite; }
+    @keyframes breathe { 0%, 100% { opacity: 0.22; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.09); } }
+
+    /* duration readouts live on the meta line — the title never yields */
+    .dur { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 10.5px; font-weight: 620; color: var(--muted); background: transparent; border: 1px solid var(--chip-line); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+    .dur svg { opacity: 0.65; }
+    .dur.total { border: none; color: var(--muted); padding: 1px 2px; }
+    .dur.total .sig { font-size: 11px; font-weight: 700; line-height: 1; }
+    .live-card.wait .dur { border-color: var(--accent-line); color: var(--accent-ink); }
+    .item.hope .dur { border-color: rgba(196,60,219,0.25); color: #9a63c9; }
+    .item.hope .dur.total { border: none; color: #b78fc9; }
+
+    /* per-row controls: star (highlight) · rename · dismiss.
+       They float over the row on hover (frosted pill) instead of living in
+       the flex flow — so the title and meta keep their full width. */
+    .controls { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 0; padding: 2px; border-radius: 9px; }
+    .item:hover .controls, .controls:focus-within { background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: blur(8px); }
+    /* starred rows keep a little air for the always-visible star badge */
+    .item.starred .item-body { padding-right: 24px; }
+    .icon-btn { border: none; background: none; color: var(--faint); cursor: pointer; padding: 5px; border-radius: 7px; line-height: 0; flex-shrink: 0; opacity: 0; transition: opacity .12s ease, background .12s ease, color .12s ease; }
+    .icon-btn svg { display: block; }
+    .item:hover .icon-btn, .icon-btn:focus-visible { opacity: 1; }
+    .icon-btn:hover { background: var(--line-soft); color: var(--ink-2); }
+    .icon-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+    .icon-btn.x { font-size: 13px; line-height: 1; padding: 5px 6px; }
+    .icon-btn.star.on { opacity: 1; color: var(--star); }
+    .icon-btn.star.on svg { fill: var(--star); }
+    .item.starred { background: var(--star-tint); }
+    .item.starred:hover { background: rgba(219, 139, 0, 0.12); }
+    .x { border: none; background: none; color: var(--faint); font-size: 13px; line-height: 1; cursor: pointer; padding: 6px; border-radius: 7px; flex-shrink: 0; opacity: 0; transition: opacity 0.12s ease; }
+    .item:hover .x, .x:focus-visible { opacity: 1; }
+    .x:hover { background: var(--line-soft); color: var(--ink-2); }
+
+    /* inline rename */
+    .rename-input { font-size: 13.5px; font-weight: 580; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 6px; width: 100%; min-width: 0; outline: none; background: var(--card); color: var(--ink); font-family: inherit; }
+
+    /* Hope AI — the crown: a gradient rail + gradient type */
+    .item.hope { padding-left: 15px; }
+    .item.hope::before { content: ""; position: absolute; left: 4px; top: 10px; bottom: 10px; width: 3px; border-radius: 3px; background: linear-gradient(var(--hope-a), var(--hope-b)); }
+    .item.hope .item-title { background: linear-gradient(135deg, var(--hope-a), var(--hope-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .item.hope .site { background: linear-gradient(135deg, var(--hope-a), var(--hope-b)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 650; }
+    /* zone rail wins over the crown rail when Hope needs you */
+    .live-card.input .item.hope::before { background: var(--alert-marker); }
+
+    /* new rows settle in like sediment */
+    @keyframes enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .item.enter { animation: enter 0.26s cubic-bezier(0.22, 1, 0.36, 1); }
+
+    /* status dots (kept for compatibility) */
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot.done { background: var(--success); }
+    .dot.recent { background: var(--faint); }
+    .dot.run { background: var(--accent); position: relative; }
+    .dot.run::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--accent); animation: breathe 4000ms cubic-bezier(0.37, 0, 0.63, 1) infinite; }
+    .item.hope .dot.done, .item.hope .dot.run { background: linear-gradient(135deg, var(--hope-a), var(--hope-b)); }
+
+    /* surface de-dup note when the panel already shows the fleet */
+    .panel-open-note { text-align: center; padding: 20px 16px; color: var(--muted); font-size: 12.5px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+
+    /* ── All quiet — the hero state, an exhale ── */
+    .clear { text-align: center; padding: 30px 16px 26px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-card); }
+    .clear .mark { display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .clear .mark svg { width: 48px; height: 48px; animation: orb-breathe 6000ms cubic-bezier(0.37, 0, 0.63, 1) infinite; transform-origin: center; }
+    @keyframes orb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+    .clear .big { font-size: 15.5px; font-weight: 650; letter-spacing: -0.01em; }
+    .clear .sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+    .clear .today { font-size: 11px; color: var(--muted); margin-top: 12px; }
+
+    /* ── Given back — the weekly reframe ── */
+    .week-card { margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 12px; font-size: 11px; color: var(--muted); display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; background: transparent; }
+    .week-card .wk-label { font-weight: 700; letter-spacing: .07em; font-size: 9.5px; color: var(--muted); }
+    .week-card b { color: var(--ink); font-weight: 650; }
+
+    /* ── Open side panel CTA (popup only) ── */
+    .open-cta {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      margin: 12px 0 4px; padding: 11px 14px; border: none; border-radius: 12px; cursor: pointer;
+      background: var(--accent-soft); color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 620;
+      transition: background 0.12s ease;
+    }
+    .open-cta:hover { background: var(--accent-line); }
+    .open-cta .kbd { font-size: 10.5px; font-weight: 600; color: var(--accent-ink); background: rgba(255,255,255,0.7); border-radius: 5px; padding: 2px 6px; }
+    .open-cta svg { color: var(--accent); }
+
+    /* both surfaces are a clean live monitor; the gear reveals settings */
+    #openPanelTop, #colPanel { display: none !important; } /* vestigial: no manual open / panel toggle */
+    .settings-only { display: none; }
+    .settings-open .settings-only { display: block; }
+    html.panel .credit { margin-top: 18px; }
+
+    /* ── Settings (collapsed by default; set once) ── */
+    .collapsible { background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+    .col-head {
+      display: flex; align-items: center; gap: 9px; width: 100%;
+      padding: 13px 14px; background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--ink); text-align: left; font-family: inherit;
+    }
+    .col-head:hover { background: var(--accent-wash); }
+    .col-head:focus-visible { outline: none; box-shadow: inset var(--focus); }
+    .col-head .label { flex: 1; }
+    .col-head .chevron { color: var(--faint); transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
+    .collapsible.open .col-head .chevron { transform: rotate(90deg); }
+    .col-body { display: none; padding: 0 14px 4px; }
+    .collapsible.open .col-body { display: block; animation: fade 0.18s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; }
+    .row + .row { border-top: 1px solid var(--line-soft); }
+    .row .name { font-size: 13px; font-weight: 550; cursor: pointer; }
+    .row .desc, .row .host { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .row .host { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--muted); }
+
+    .toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle .slider { position: absolute; inset: 0; background: #D6D3DC; border-radius: 11px; transition: background 0.18s; cursor: pointer; }
+    .toggle .slider::before { content: ""; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+    .toggle input:checked + .slider { background: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+    .toggle input:focus-visible + .slider { box-shadow: var(--focus); }
+
+    .test-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 6px 0 12px; padding: 9px; border: 1px solid var(--chip-line); border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 560; color: var(--accent); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .test-btn:hover { background: var(--accent-soft); border-color: var(--accent-line); }
+    .test-btn:focus-visible { outline: none; box-shadow: var(--focus); }
+    /* the chime made visible: three rising dots — C · E · G */
+    .test-btn .notes { display: inline-flex; align-items: flex-end; gap: 2.5px; height: 10px; }
+    .test-btn .notes i { width: 4px; border-radius: 2px; background: currentColor; }
+    .test-btn .notes i:nth-child(1) { height: 4px; opacity: .45; }
+    .test-btn .notes i:nth-child(2) { height: 7px; opacity: .7; }
+    .test-btn .notes i:nth-child(3) { height: 10px; opacity: 1; }
+
+    /* nothing in this product is ever red — errors speak amber too */
+    .error { margin-top: 8px; padding: 6px 8px; font-size: 11px; color: var(--alert); background: var(--alert-soft); border: 1px solid var(--alert-line); border-radius: 6px; display: none; }
+
+    /* ── Credit ── */
+    .credit { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line-soft); text-align: center; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .credit a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .credit a:hover { text-decoration: underline; }
+    .credit .spark { background: linear-gradient(135deg, var(--hope-a), var(--hope-b)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; }
+
+    /* Hope reading control (rendered by js/hopectl.js) */
+    .hope-ctl { margin: 0 0 14px; padding: 11px 13px; border: 1px solid var(--accent-line); border-radius: 12px; background: var(--accent-wash); }
+    .hope-ctl .hc-top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .hope-ctl .hc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hope-a); flex: 0 0 auto; }
+    .hope-ctl .hc-label { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .hope-ctl .hc-count { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--accent); }
+    .hope-ctl .hc-acts { display: flex; gap: 7px; }
+    .hope-ctl .hc-b { flex: 1; cursor: pointer; border: none; background: var(--accent-soft); color: var(--accent-ink); font-size: 11.5px; font-weight: 600; padding: 6px 10px; border-radius: 8px; font-family: inherit; }
+    .hope-ctl .hc-b:hover { background: var(--accent-line); }
+    .exp-foot { margin-top: 11px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .exp-foot a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .exp-foot a:hover { text-decoration: underline; }
+    .show-more { display:block; width:100%; margin-top:8px; padding:7px; cursor:pointer; border:none; background:transparent; color:var(--muted); font-size:11.5px; font-weight:600; border-radius:9px; transition:background .15s,color .15s; font-family: inherit; }
+    .show-more:hover { background:var(--accent-soft); color:var(--accent); }
+
+    .stats-summary { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .stats-summary .ss-row { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--muted); }
+    .stats-summary .ss-name { font-weight: 650; color: var(--ink); flex: 0 0 auto; }
+    .stats-summary .ss-meta { flex: 1; text-align: right; }
+    .stats-summary .ss-meta b { color: var(--ink); font-weight: 600; }
+    .stats-summary .ss-empty { font-size: 12px; color: var(--muted); }
+
+    /* custom sites (user-added) */
+    .add-current { width:100%; margin-top:10px; font:inherit; font-size:12.5px; font-weight:650; padding:9px; border:1px solid var(--accent); border-radius:9px; background:var(--accent-soft); color:var(--accent); cursor:pointer; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .add-current:hover:not(:disabled) { background:var(--accent); color:#fff; }
+    .add-current:disabled { border-color:var(--line); background:transparent; color:var(--muted); cursor:default; }
+    .add-site { display:flex; gap:6px; margin-top:10px; }
+    .add-site input { flex:1; min-width:0; font:inherit; font-size:12.5px; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); outline:none; }
+    .add-site input:focus { border-color:var(--accent); }
+    .add-site button { font:inherit; font-size:12px; font-weight:650; padding:7px 13px; border:none; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; flex-shrink:0; }
+    .add-site button:hover { filter:brightness(1.06); }
+    .add-site-hint { font-size:10.5px; color:var(--muted); margin-top:6px; line-height:1.45; }
+    .add-site-err { font-size:11px; color:var(--alert); margin-top:5px; display:none; }
+    .user-site { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 2px; }
+    .user-site .u-host { font-size:12.5px; font-weight:560; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .user-site .u-remove { border:none; background:none; color:var(--faint); cursor:pointer; padding:4px 7px; border-radius:6px; font-size:13px; line-height:1; flex-shrink:0; }
+    .user-site .u-remove:hover { background:var(--line-soft); color:var(--ink-2); }
+
+    /* ── Dark: true warm darks, borders carry the depth ── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141317;
+        --bg-wash: radial-gradient(120% 90% at 50% -10%, #191723 0%, #141317 55%);
+        --card: #1D1C23;
+        --ink: #EDECEF;
+        --ink-2: #C6C4CE;
+        --muted: #9C99A6;
+        --faint: #64626E;
+        --line: #2C2A33;
+        --line-soft: #232128;
+        --accent: #8B83FF;
+        --accent-ink: #A5A0FF;
+        --accent-soft: rgba(139, 131, 255, 0.14);
+        --accent-wash: rgba(139, 131, 255, 0.06);
+        --accent-line: #35315A;
+        --alert: #F5B13B;
+        --alert-marker: #E9A02C;
+        --alert-soft: #241E10;
+        --alert-line: #453718;
+        --success: #4ADE80;
+        --star: #F0B429;
+        --star-tint: rgba(240, 178, 62, 0.10);
+        --hope-a: #8B7BFF;
+        --hope-b: #D368E8;
+        --hover: #26242C;
+        --chip-line: #34323C;
+        --shadow-card: none;
+        --shadow-alert: none;
+      }
+      .header img { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+      .eyebrow.wait .n { color: #14131A; }
+      .toggle .slider { background: #3A3842; }
+      .toggle .slider::before { background: #ECEBEF; }
+      .item.starred:hover { background: rgba(240, 178, 62, 0.16); }
+      .item.hope .dur { border-color: rgba(211, 104, 232, 0.3); color: #C79BE0; }
+      .item.hope .dur.total { color: #B78FC9; }
+      .open-cta .kbd { background: rgba(255,255,255,0.08); }
+      .rename-input { background: var(--hover); }
+    }
+
+    /* ── Reduced motion: stillness, but never lose the signal ── */
+    @media (prefers-reduced-motion: reduce) {
+      .avatar.run::after, .dot.run::after { animation: none; opacity: 0.45; transform: none; }
+      .clear .mark svg { animation: none; }
+      .item.enter { animation: none; }
+      .collapsible.open .col-body { animation: none; }
+      .col-head .chevron, .toggle .slider, .toggle .slider::before { transition: none; }
+    }
+  </style>
+  <style>html,body{width:auto !important;max-width:none;} body{padding:16px;} .header img,.header h1{display:none;} .header{min-height:32px;}</style>
+  <!-- GENERATED from popup.html by build.py — do not edit -->
+</head>
+<body>
+  <div class="header">
+    <img src="icon48.png" alt="Sanity">
+    <h1>Sanity AI</h1>
+    <span class="version">v2.33</span>
+    <button class="gear" id="gearBtn" title="Settings" aria-label="Settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+
+  <!-- The one sentence: what needs you, or permission to look away -->
+  <div class="status" id="status" style="display:none" aria-live="polite"></div>
+
+  <!-- Live overview (the thing you open Sanity for) -->
+  <div class="live" id="live"></div>
+
+  <!-- Given back (local stats — never leaves the device) -->
+  <div id="weekCard" class="week-card" style="display:none"></div>
+
+  <!-- Open the control tower (popup only; hidden inside the panel) -->
+  <button class="open-cta open-panel settings-only" id="openPanelTop" style="display:none">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.6" y="2.6" width="12.8" height="10.8" rx="2" stroke="currentColor" stroke-width="1.4"/><line x1="10.2" y1="2.6" x2="10.2" y2="13.4" stroke="currentColor" stroke-width="1.4"/></svg>
+    <span>Open side panel</span><span class="kbd">⌥⇧S</span>
+  </button>
+
+  <!-- Settings: collapsed by default; you set these once -->
+  <div class="collapsible settings-only" id="colNotify">
+    <button class="col-head" aria-expanded="false">
+      <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6L4 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Notify me with</span>
+    </button>
+    <div class="col-body">
+      <div class="row">
+        <div><label class="name" for="chime">A chime</label><div class="desc">Three soft notes (C–E–G) when work finishes</div></div>
+        <label class="toggle"><input type="checkbox" id="chime" checked><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><label class="name" for="notif">A notification</label><div class="desc">A gentle desktop nudge — click to return</div></div>
+        <label class="toggle"><input type="checkbox" id="notif" checked><span class="slider"></span></label>
+      </div>
+      <div class="row">
+        <div><label class="name" for="badge">Tab &amp; icon badge</label><div class="desc">✅ on the tab, and a count on the icon</div></div>
+        <label class="toggle"><input type="checkbox" id="badge" checked><span class="slider"></span></label>
+      </div>
+      <button class="test-btn" id="testBtn"><span class="notes" aria-hidden="true"><i></i><i></i><i></i></span>Hear the chime</button>
+    </div>
+  </div>
+
+  <div class="collapsible settings-only" id="colSites">
+    <button class="col-head" aria-expanded="false">
+      <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6L4 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Watch these sites</span>
+    </button>
+    <div class="col-body">
+      <div class="row"><div><label class="name" for="site-hope">Hope AI</label><div class="host">bit.cloud</div></div><label class="toggle"><input type="checkbox" id="site-hope" checked><span class="slider"></span></label></div>
+      <div class="row"><div><label class="name" for="site-claude">Claude</label><div class="host">claude.ai</div></div><label class="toggle"><input type="checkbox" id="site-claude" checked><span class="slider"></span></label></div>
+      <div class="row"><div><label class="name" for="site-gemini">Gemini</label><div class="host">gemini.google.com</div></div><label class="toggle"><input type="checkbox" id="site-gemini" checked><span class="slider"></span></label></div>
+      <div class="row"><div><label class="name" for="site-chatgpt">ChatGPT</label><div class="host">chatgpt.com</div></div><label class="toggle"><input type="checkbox" id="site-chatgpt" checked><span class="slider"></span></label></div>
+      <div class="row"><div><label class="name" for="site-cursor">Cursor</label><div class="host">cursor.com</div></div><label class="toggle"><input type="checkbox" id="site-cursor" checked><span class="slider"></span></label></div>
+      <div id="userSites"></div>
+      <button id="addCurrentBtn" class="add-current" type="button" disabled>Detecting current site…</button>
+      <div class="add-site">
+        <input type="text" id="addSiteInput" placeholder="or type a site, e.g. perplexity.ai" spellcheck="false" autocapitalize="off" />
+        <button id="addSiteBtn" type="button">Add</button>
+      </div>
+      <div class="add-site-hint">Watches any site for when its AI stops generating. You'll be asked to allow access to that site.</div>
+      <div class="add-site-err" id="addSiteErr"></div>
+    </div>
+  </div>
+
+  <div class="collapsible settings-only" id="colPanel">
+    <button class="col-head" aria-expanded="false">
+      <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6L4 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Side panel</span>
+    </button>
+    <div class="col-body">
+      <div class="row">
+        <div><label class="name" for="panel">Show the side panel</label><div class="desc">A live control tower docked to the side · ⌥⇧S</div></div>
+        <label class="toggle"><input type="checkbox" id="panel" checked><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="collapsible settings-only" id="colStats">
+    <button class="col-head" aria-expanded="false">
+      <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6L4 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Usage &amp; data</span>
+    </button>
+    <div class="col-body">
+      <div id="statsSummary" class="stats-summary"></div>
+      <button class="test-btn" id="exportCsvBtn" type="button">Export runs (CSV)</button>
+      <div class="add-site-hint">Everything is stored on your device and survives updates. The CSV downloads locally — nothing is ever sent anywhere.</div>
+    </div>
+  </div>
+
+  <div class="collapsible settings-only" id="colHope">
+    <button class="col-head" aria-expanded="false">
+      <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6L4 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="label">Experiments</span>
+    </button>
+    <div class="col-body">
+      <div class="row">
+        <div><label class="name" for="collapse">Collapse long AI responses</label><div class="desc">Opens to the latest reply, folds the rest · ⌥C · experimental</div></div>
+        <label class="toggle"><input type="checkbox" id="collapse"><span class="slider"></span></label>
+      </div>
+      <div class="exp-foot">Early prototypes we're testing before building into Hope. <a id="expFeedback" href="#">Share feedback ›</a></div>
+    </div>
+  </div>
+
+  <div class="error" id="errorMsg"></div>
+
+  <!-- Hope reading control: shown only while reading on Hope -->
+  <div id="hopeCtl" class="hope-ctl" style="display:none"></div>
+
+  <div class="credit">
+    A personal project by Yonatan Sason <span class="spark">&#9679;</span><br>
+    works with Claude, ChatGPT, Gemini, Cursor &amp; <a href="https://bit.cloud/hope" target="_blank" rel="noopener noreferrer">Bit&rsquo;s Hope&nbsp;AI</a>
+  </div>
+
+  <script src="constants.js"></script>
+  <script src="js/sites.js"></script>
+  <script src="js/hopectl.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
