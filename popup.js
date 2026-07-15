@@ -2,7 +2,7 @@
   "use strict";
 
   const NOTIFY_KEYS = ["chime", "notif", "badge"];
-  const SITE_KEYS = ["hope", "claude", "gemini", "chatgpt", "cursor"];
+  const SITE_KEYS = ["hope", "claude", "gemini", "chatgpt", "cursor", "perplexity"];
   const SITES_KEY = "sites";
   const errorEl = document.getElementById("errorMsg");
   const hasStorage = typeof chrome !== "undefined" && chrome.storage && chrome.storage.local;
@@ -90,6 +90,7 @@
     if (s.includes("gemini") || h.includes("gemini")) return { color: "#4285f4", ring: "#4285f4", glyph: "\u2726" };
     if (s.includes("chatgpt") || h.includes("openai") || h.includes("chatgpt")) return { color: "#10a37f", ring: "#10a37f", glyph: "G" };
     if (s.includes("cursor") || h.includes("cursor")) return { color: "#6b7280", ring: "#6b7280", glyph: "\u203A" };
+    if (s.includes("perplexity") || h.includes("perplexity")) return { color: "#20808d", ring: "#20808d", glyph: "P" };
     return { color: "#6366f1", ring: "#6366f1", glyph: "\u2022" };
   }
 

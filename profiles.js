@@ -61,6 +61,20 @@
       indicatorSelectors: [], textSignals: [], actionInProgress: null,
     },
     {
+      name: "claude-code", label: "Claude Code",
+      // claude.ai/code — Claude Code on the web. Long agentic runs (Fable &co)
+      // whose API is NOT the chat completion endpoint, so the network hook
+      // stays silent and the DOM carries detection alone. Agentic pacing:
+      // a longer quiet window so tool handoffs don't read as completions.
+      test: (h, p) => h === "claude.ai" && p.startsWith("/code"),
+      settings: "claude", // same on/off switch as Claude
+      settleMs: 4000, minActiveMs: 3000,
+      root: () => document.querySelector("main") || document.body,
+      indicatorSelectors: [...STOP_CONTROLS, '[class*="streaming" i]', '[data-is-streaming="true"]'],
+      textSignals: [],
+      actionInProgress: null,
+    },
+    {
       name: "claude", label: "Claude",
       test: (h) => h === "claude.ai",
       settleMs: 2500, minActiveMs: 2000,
@@ -101,6 +115,17 @@
       root: () => document.querySelector("main") || document.body,
       indicatorSelectors: [...STOP_CONTROLS, ...SPINNERS, '[class*="generating" i]'],
       textSignals: [/^\s*(Generating|Thinking|Working)[\u2026.]{0,3}\s*$/i],
+      actionInProgress: null,
+    },
+    {
+      name: "perplexity", label: "Perplexity",
+      // Built in (Dia can't grant new sites at runtime); scored like generic
+      // so a stray page spinner alone doesn't read as "agent working".
+      test: (h) => h === "perplexity.ai" || h === "www.perplexity.ai",
+      scored: true,
+      root: () => document.querySelector("main") || document.body,
+      indicatorSelectors: [...STOP_CONTROLS, ...SPINNERS, '[class*="thinking" i]'],
+      textSignals: [/^\s*(Thinking|Generating|Working|Running|Researching)[\u2026.]{0,3}\s*$/i],
       actionInProgress: null,
     },
     {

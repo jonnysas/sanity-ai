@@ -80,13 +80,27 @@
 
   // What does detection see, right now? (consumed by "Copy debug report")
   function detectSnapshot() {
+    // Name the element, not just the selector — a latched indicator is
+    // identifiable straight from a pasted report.
+    const describe = (el) => {
+      try {
+        let d = el.tagName.toLowerCase();
+        const al = el.getAttribute && el.getAttribute("aria-label");
+        if (al) d += '[aria-label="' + al.slice(0, 48) + '"]';
+        const cls = (typeof el.className === "string" ? el.className : (el.className && el.className.baseVal) || "").trim().split(/\s+/).slice(0, 3).join(".");
+        if (cls) d += " ." + cls.slice(0, 80);
+        const txt = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+        if (txt) d += ' "' + txt + '"';
+        return d;
+      } catch (e) { return "?"; }
+    };
     const domHits = [];
     try {
       const root = profile.root() || document.body;
       if (root) {
         for (const sel of profile.indicatorSelectors) {
           let els; try { els = root.querySelectorAll(sel); } catch (e) { continue; }
-          for (const el of els) { if (isVisible(el)) { domHits.push(sel); break; } }
+          for (const el of els) { if (isVisible(el)) { domHits.push({ sel, el: describe(el) }); break; } }
         }
       }
     } catch (e) {}
@@ -121,6 +135,7 @@
     if (s.includes("gemini") || h.includes("gemini")) return { color: "#4285f4", glyph: "\u2726" };
     if (s.includes("chatgpt") || h.includes("openai") || h.includes("chatgpt")) return { color: "#10a37f", glyph: "G" };
     if (s.includes("cursor") || h.includes("cursor")) return { color: "#6b7280", glyph: "\u203A" };
+    if (s.includes("perplexity") || h.includes("perplexity")) return { color: "#20808d", glyph: "P" };
     return { color: "#6366f1", glyph: "\u2022" };
   }
   function durText(ms) {

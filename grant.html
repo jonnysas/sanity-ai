@@ -59,15 +59,14 @@
     <p>Sanity will notice when its AI stops generating and let you know — a chime, a nudge, a mark on the tab. Your browser will ask you to allow access first.</p>
     <button id="grantBtn">Allow and start watching</button>
     <div class="status" id="status"></div>
-    <!-- Shown when the browser never displays the permission prompt (Dia) -->
+    <!-- Shown when the browser never displays the permission prompt -->
     <div class="manual" id="manual" style="display:none">
-      <div class="m-title">Grant it manually — takes ten seconds:</div>
+      <div class="m-title">On Dia, new sites can’t be granted (yet)</div>
       <ol>
-        <li>Open <b>Extensions → Manage extensions</b> (or <span class="mono">dia://extensions</span>)</li>
-        <li>Find <b>Sanity AI</b> → <b>Details</b></li>
-        <li>Under <b>Site access</b>, choose “On specific sites” and add <b class="mhost">this site</b></li>
+        <li><b>Dia:</b> the prompt never appears, and Dia’s <b>Site access</b> panel can only toggle Sanity’s built-in sites — there’s no “add a page” option. All built-in sites keep working; ask for the site you need to be built in.</li>
+        <li><b>Chrome / Brave / Edge:</b> open <b>Manage extensions → Sanity AI → Details → Site access</b>, choose “On specific sites”, and add <b class="mhost">this site</b>.</li>
       </ol>
-      <div class="m-note">Leave this tab open — the moment access appears, I’ll finish adding <span class="mhost">the site</span> automatically.</div>
+      <div class="m-note">Leave this tab open — if access appears by any route, I’ll finish adding <span class="mhost">the site</span> automatically.</div>
     </div>
     <div class="fine">Detection runs on your device. Nothing is ever sent anywhere.</div>
   </div>
