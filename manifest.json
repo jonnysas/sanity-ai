@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sanity AI",
-  "version": "2.34.1",
+  "version": "2.34.2",
   "description": "Get a chime and a live overview the moment your AI agents finish working. Stay sane working with AI tools.",
   "author": "Yonatan Sason",
   "permissions": [
@@ -34,7 +34,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://cursor.com/*",
-        "https://www.cursor.com/*"
+        "https://www.cursor.com/*",
+        "https://www.perplexity.ai/*",
+        "https://perplexity.ai/*"
       ],
       "js": [
         "constants.js",
@@ -99,6 +101,8 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://cursor.com/*",
-    "https://www.cursor.com/*"
+    "https://www.cursor.com/*",
+    "https://www.perplexity.ai/*",
+    "https://perplexity.ai/*"
   ]
 }

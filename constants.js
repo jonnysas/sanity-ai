@@ -35,5 +35,5 @@ var SAN = globalThis.SAN || {
     COLLAPSE: "collapse",
   },
   // Hosts that ship built in (used to gate "watch current site")
-  BUILTIN_RE: /(^|\.)(bit\.cloud|claude\.ai|gemini\.google\.com|chatgpt\.com|chat\.openai\.com|cursor\.com)$/i,
+  BUILTIN_RE: /(^|\.)(bit\.cloud|claude\.ai|gemini\.google\.com|chatgpt\.com|chat\.openai\.com|cursor\.com|perplexity\.ai)$/i,
 };
