@@ -63,15 +63,50 @@
   // settleCheck: the SW's callback for the settle window (see startSettling) —
   // hidden tabs get their timers throttled to a crawl, so the SW keeps time.
   try {
-    chrome.runtime.onMessage.addListener((msg) => {
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (!msg) return;
       if (msg.type === "sanityToast" && !document.hidden) showToast(msg);
       if (msg.type === "settleCheck" && state === "SETTLING") {
         clearTimeout(settleTimer);
         finish();
       }
+      // Live detection snapshot for the debug report: which signals think the
+      // agent is working right now — pinpoints stuck runs from a paste.
+      if (msg.type === "detectReport") {
+        try { sendResponse(detectSnapshot()); } catch (e) { sendResponse({ err: e && e.message }); }
+      }
     });
   } catch (e) {}
+
+  // What does detection see, right now? (consumed by "Copy debug report")
+  function detectSnapshot() {
+    const domHits = [];
+    try {
+      const root = profile.root() || document.body;
+      if (root) {
+        for (const sel of profile.indicatorSelectors) {
+          let els; try { els = root.querySelectorAll(sel); } catch (e) { continue; }
+          for (const el of els) { if (isVisible(el)) { domHits.push(sel); break; } }
+        }
+      }
+    } catch (e) {}
+    let score = -1; try { score = indicatorScore(); } catch (e) {}
+    let approval = false; try { approval = approvalVisible(); } catch (e) {}
+    return {
+      profile: profile.name,
+      state,
+      netActive,
+      useNetwork: !!profile.useNetwork,
+      domFallback: !!profile.domFallback,
+      score,
+      domHits: domHits.slice(0, 8),
+      approval,
+      workStartedAt,
+      workStoppedAt,
+      hidden: document.hidden,
+      href: location.href.slice(0, 140),
+    };
+  }
 
   // ── In-page toast (primary notifier — bypasses the OS entirely) ──
   let toastHost = null, toastTimer = null;

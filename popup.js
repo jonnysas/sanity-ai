@@ -597,21 +597,40 @@
       ua: navigator.userAgent,
       at: new Date().toISOString(),
     };
-    const deliver = (state, log) => {
+    const deliver = (state, log, detection) => {
       report.state = state;
+      report.detection = detection || []; // live per-tab signal snapshots
       report.log = (log || []).map((l) => ({ ...l, t: new Date(l.ts).toISOString() }));
       navigator.clipboard.writeText(JSON.stringify(report, null, 2)).then(() => {
         dbgBtn.textContent = "Copied — paste it into a bug report";
         setTimeout(() => { dbgBtn.textContent = "Copy debug report"; }, 2600);
       }).catch(() => showError("Couldn’t copy — clipboard was blocked."));
     };
-    const withLog = (state) => {
+    const withLog = (state, detection) => {
       if (chrome.storage && chrome.storage.session) {
-        chrome.storage.session.get("dbg", (r) => deliver(state, (r && r.dbg) || []));
-      } else deliver(state, []);
+        chrome.storage.session.get("dbg", (r) => deliver(state, (r && r.dbg) || [], detection));
+      } else deliver(state, [], detection);
     };
-    if (canMessage) chrome.runtime.sendMessage({ type: "getState" }, (st) => withLog(chrome.runtime.lastError ? null : st));
-    else withLog(null);
+    // Ask each active session's tab what its detection sees right now —
+    // this is what turns "it's stuck" into "THIS selector/signal is stuck".
+    const snapshotTab = (id) => new Promise((res) => {
+      let settled = false;
+      const fin = (v) => { if (!settled) { settled = true; res(v); } };
+      try {
+        chrome.tabs.sendMessage(id, { type: "detectReport" }, (r) => {
+          fin(chrome.runtime.lastError ? { tabId: id, err: chrome.runtime.lastError.message } : { tabId: id, ...(r || {}) });
+        });
+      } catch (e) { fin({ tabId: id, err: e && e.message }); }
+      setTimeout(() => fin({ tabId: id, err: "timeout" }), 900);
+    });
+    const withDetection = (state) => {
+      const ids = [];
+      if (state) for (const k of ["running", "blocked"]) for (const it of state[k] || []) if (typeof it.tabId === "number") ids.push(it.tabId);
+      if (!ids.length || !(typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.sendMessage)) { withLog(state, []); return; }
+      Promise.all(ids.slice(0, 6).map(snapshotTab)).then((snaps) => withLog(state, snaps));
+    };
+    if (canMessage) chrome.runtime.sendMessage({ type: "getState" }, (st) => withDetection(chrome.runtime.lastError ? null : st));
+    else withLog(null, []);
   });
 
   // "This week" — local stats card (runs · agent time · longest).

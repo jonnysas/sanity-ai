@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sanity AI",
-  "version": "2.34.0",
+  "version": "2.34.1",
   "description": "Get a chime and a live overview the moment your AI agents finish working. Stay sane working with AI tools.",
   "author": "Yonatan Sason",
   "permissions": [

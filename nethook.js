@@ -83,6 +83,18 @@
       if (!matches(url, method, "fetch")) return p;
 
       const done = tracker();
+      // If the page aborts this request (SPA nav, retry, agent handoff), the
+      // teed monitor branch below would otherwise hold the connection open and
+      // pin "working" forever — a canceled request is over; say so immediately.
+      let monReader = null;
+      const onAbort = () => { try { if (monReader) monReader.cancel(); } catch {} done(); };
+      try {
+        const sig = (init && init.signal) || (input && typeof input === "object" && input.signal) || null;
+        if (sig && typeof sig.addEventListener === "function") {
+          if (sig.aborted) onAbort();
+          else sig.addEventListener("abort", onAbort, { once: true });
+        }
+      } catch {}
       const t0 = Date.now(); // user submitted (request fired)
       let startSent = false;
       const emitStart = () => {
@@ -131,6 +143,7 @@
           const [appStream, monStream] = resp.body.tee();
           (async () => {
             const reader = monStream.getReader();
+            monReader = reader; // reachable by the abort handler above
             try { for (;;) { const { done: d } = await reader.read(); emitStart(); if (d) break; } } catch {}
             done();
           })();
