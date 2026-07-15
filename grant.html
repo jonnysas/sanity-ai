@@ -43,6 +43,13 @@
   .status.ok { display: block; color: var(--success); }
   .status.err { display: block; color: var(--alert); background: var(--alert-soft); border: 1px solid var(--alert-line); }
   .fine { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size: 11.5px; color: var(--muted); }
+  .manual { margin-top: 16px; padding: 14px 16px; text-align: left; background: var(--accent-soft); border: 1px solid var(--line); border-radius: 12px; font-size: 12.5px; }
+  .manual .m-title { font-weight: 650; margin-bottom: 8px; }
+  .manual ol { margin: 0 0 10px; padding-left: 18px; color: var(--muted); }
+  .manual li { margin-bottom: 4px; }
+  .manual b { color: var(--ink); font-weight: 650; }
+  .manual .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; }
+  .manual .m-note { color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -52,6 +59,16 @@
     <p>Sanity will notice when its AI stops generating and let you know — a chime, a nudge, a mark on the tab. Your browser will ask you to allow access first.</p>
     <button id="grantBtn">Allow and start watching</button>
     <div class="status" id="status"></div>
+    <!-- Shown when the browser never displays the permission prompt (Dia) -->
+    <div class="manual" id="manual" style="display:none">
+      <div class="m-title">Grant it manually — takes ten seconds:</div>
+      <ol>
+        <li>Open <b>Extensions → Manage extensions</b> (or <span class="mono">dia://extensions</span>)</li>
+        <li>Find <b>Sanity AI</b> → <b>Details</b></li>
+        <li>Under <b>Site access</b>, choose “On specific sites” and add <b class="mhost">this site</b></li>
+      </ol>
+      <div class="m-note">Leave this tab open — the moment access appears, I’ll finish adding <span class="mhost">the site</span> automatically.</div>
+    </div>
     <div class="fine">Detection runs on your device. Nothing is ever sent anywhere.</div>
   </div>
 <script src="grant.js"></script>
