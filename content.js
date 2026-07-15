@@ -60,9 +60,16 @@
 
   // Completion toast: the SW sends it to the active tab only (targeted message —
   // session storage stays trusted-only, nothing broadcast to page contexts).
+  // settleCheck: the SW's callback for the settle window (see startSettling) —
+  // hidden tabs get their timers throttled to a crawl, so the SW keeps time.
   try {
     chrome.runtime.onMessage.addListener((msg) => {
-      if (msg && msg.type === "sanityToast" && !document.hidden) showToast(msg);
+      if (!msg) return;
+      if (msg.type === "sanityToast" && !document.hidden) showToast(msg);
+      if (msg.type === "settleCheck" && state === "SETTLING") {
+        clearTimeout(settleTimer);
+        finish();
+      }
     });
   } catch (e) {}
 
@@ -380,6 +387,11 @@
     workStoppedAt = Date.now();
     clearTimeout(settleTimer);
     settleTimer = setTimeout(finish, SETTLE_MS);
+    // Hidden tabs get their timers throttled to ≥1/min (Chrome; Dia is harsher),
+    // which used to delay the "done" until the user came back to the tab — the
+    // exact moment a notification is useless. The service worker's clock is
+    // never tab-throttled, so ask it to call back when the window elapses.
+    if (document.hidden) send({ type: "settlePing", ms: SETTLE_MS + 250 });
     dbg(`→ SETTLING (quiet; will confirm in ${SETTLE_MS}ms)`);
   }
 
@@ -523,6 +535,13 @@
   document.addEventListener("visibilitychange", () => {
     dismissToast(); // returning to or leaving a tab clears any toast showing on it
     if (!document.hidden) {
+      // Belt and braces for throttled timers: if the settle window already
+      // elapsed while this tab was hidden (and the SW callback got lost to a
+      // worker restart), conclude the run right now.
+      if (state === "SETTLING" && Date.now() - workStoppedAt >= SETTLE_MS && !isWorking()) {
+        clearTimeout(settleTimer);
+        finish();
+      }
       stopMark();
       send({ type: "seen" }); // tell the SW to dismiss this tab's notification
     }

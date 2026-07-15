@@ -140,7 +140,7 @@
   function makeItem(it, kind) {
     const row = document.createElement("div");
     row.className = "item";
-    if (it.host === "bit.cloud" || it.site === "Hope AI") row.classList.add("hope");
+    if (/(^|\.)bit\.cloud$/i.test(it.host || "") || it.site === "Hope AI") row.classList.add("hope");
     if (starred[convOf(it)]) row.classList.add("starred");
     row.dataset.key = kind + ":" + it.tabId;
     row.setAttribute("role", "button");
@@ -586,6 +586,34 @@
   const expBtn = document.getElementById("exportCsvBtn");
   if (expBtn) expBtn.addEventListener("click", exportCsv);
 
+  // ── Copy debug report: everything needed to diagnose a bug, one click ──
+  // Manifest version, browser UA, live fleet state, and the SW's event log.
+  const dbgBtn = document.getElementById("copyDebugBtn");
+  if (dbgBtn) dbgBtn.addEventListener("click", () => {
+    const report = {
+      extension: "Sanity AI",
+      version: (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : "?",
+      surface: PANEL ? "sidepanel" : "popup",
+      ua: navigator.userAgent,
+      at: new Date().toISOString(),
+    };
+    const deliver = (state, log) => {
+      report.state = state;
+      report.log = (log || []).map((l) => ({ ...l, t: new Date(l.ts).toISOString() }));
+      navigator.clipboard.writeText(JSON.stringify(report, null, 2)).then(() => {
+        dbgBtn.textContent = "Copied — paste it into a bug report";
+        setTimeout(() => { dbgBtn.textContent = "Copy debug report"; }, 2600);
+      }).catch(() => showError("Couldn’t copy — clipboard was blocked."));
+    };
+    const withLog = (state) => {
+      if (chrome.storage && chrome.storage.session) {
+        chrome.storage.session.get("dbg", (r) => deliver(state, (r && r.dbg) || []));
+      } else deliver(state, []);
+    };
+    if (canMessage) chrome.runtime.sendMessage({ type: "getState" }, (st) => withLog(chrome.runtime.lastError ? null : st));
+    else withLog(null);
+  });
+
   // "This week" — local stats card (runs · agent time · longest).
   function renderWeek() {
     const box = document.getElementById("weekCard");
@@ -630,7 +658,7 @@
     let t = null;
     chrome.storage.session.onChanged.addListener((changes) => {
       if (changes.hopeReading || changes.hopeCmd) renderHopeCtl();
-      const fleet = Object.keys(changes || {}).filter((k) => k !== "toast" && k !== "hopeReading" && k !== "hopeCmd");
+      const fleet = Object.keys(changes || {}).filter((k) => k !== "toast" && k !== "hopeReading" && k !== "hopeCmd" && k !== "dbg");
       if (fleet.length === 0) return; // non-fleet broadcast — don't re-pull the list
       clearTimeout(t); t = setTimeout(loadLive, 120);
     });

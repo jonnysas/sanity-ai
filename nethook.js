@@ -24,7 +24,9 @@
     "chatgpt.com":      [{ re: /\/backend-api\/(f\/)?conversation\b/i, via: "fetch", method: "POST" }],
     "chat.openai.com":  [{ re: /\/backend-api\/(f\/)?conversation\b/i, via: "fetch", method: "POST" }],
   };
-  const rules = HOSTS[location.host];
+  // Subdomains of bit.cloud (e.g. main.lanes.bit.cloud) run Hope too.
+  const rules = HOSTS[location.host]
+    || (/(^|\.)bit\.cloud$/i.test(location.host) ? HOSTS["bit.cloud"] : null);
   if (!rules) return;
 
   const needXhr = rules.some((r) => r.via === "xhr");

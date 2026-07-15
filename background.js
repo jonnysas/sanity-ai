@@ -24,6 +24,21 @@ const ICON = chrome.runtime.getURL("icon128.png");
 // Session storage stays TRUSTED_ONLY (the default): content scripts can't read
 // the fleet state. Toasts go to the active tab as a targeted message instead.
 
+// ── Debug log: a small ring buffer surfaced by "Copy debug report" ──
+// (settings → Usage & data). Session-scoped: resets with the browser.
+const DBG_MAX = 300;
+let dbgBuf = [];
+let dbgFlushTimer = null;
+function dlog(src, msg, data) {
+  dbgBuf.push({ ts: Date.now(), src, msg, ...(data !== undefined ? { data } : {}) });
+  if (dbgBuf.length > DBG_MAX) dbgBuf = dbgBuf.slice(-DBG_MAX);
+  clearTimeout(dbgFlushTimer);
+  dbgFlushTimer = setTimeout(() => { try { chrome.storage.session.set({ dbg: dbgBuf }); } catch (e) {} }, 400);
+}
+try { // survive SW respawns
+  chrome.storage.session.get("dbg").then((r) => { if (Array.isArray(r.dbg)) dbgBuf = r.dbg.concat(dbgBuf).slice(-DBG_MAX); }).catch(() => {});
+} catch (e) {}
+
 async function broadcastToast(t) {
   try {
     const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
@@ -106,7 +121,7 @@ async function notifyDone(tabId, title, durationMs, url) {
           }, () => resolve(!chrome.runtime.lastError));
         } catch (e) { resolve(false); }
       });
-      if (ok) return true; // native worked — done
+      if (ok) { dlog("notify", "native", { tabId }); return true; }
     } catch (e) { /* fall through */ }
   }
 
@@ -117,9 +132,11 @@ async function notifyDone(tabId, title, durationMs, url) {
       target: "offscreen", type: "show-notification",
       title: notifTitle, body: notifBody, icon: ICON, tabId, url,
     });
+    dlog("notify", res && res.shown ? "offscreen" : "offscreen-failed", { tabId });
     return !!(res && res.shown);
   } catch (e) {
     console.warn("[Sanity] notification failed:", e && e.message);
+    dlog("notify", "failed", { tabId, err: e && e.message });
     return false;
   }
 }
@@ -271,6 +288,7 @@ async function focusTab(tabId, url) {
       }
       // Low-noise trace so the fork behavior is confirmable from the SW console.
       try { console.debug("[Sanity] focusTab", { winId, here, raised, action }); } catch (e) {}
+      dlog("focusTab", action, { winId, here, raised });
     }
   } catch (e) {
     // Tab was closed — reopen the conversation in a new tab if we know its URL.
@@ -411,8 +429,9 @@ async function registerUserSite(origin) {
     await chrome.scripting.registerContentScripts([{
       id, matches: [origin], js: ["constants.js", "profiles.js", "content.js"], runAt: "document_idle", persistAcrossSessions: true,
     }]);
+    dlog("sites", "registered", { origin });
     return true;
-  } catch (e) { console.warn("[Sanity] register failed:", origin, e && e.message); return false; }
+  } catch (e) { console.warn("[Sanity] register failed:", origin, e && e.message); dlog("sites", "register-failed", { origin, err: e && e.message }); return false; }
 }
 async function unregisterUserSite(origin) {
   try { await chrome.scripting.unregisterContentScripts({ ids: [scriptIdFor(origin)] }); } catch (e) {}
@@ -442,6 +461,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         lastDone.set(tabId, now);
         if (now - prev < DONE_DEBOUNCE_MS) return; // flapping / streamed-chunk gap — one completion, not many
       }
+      dlog("done", msg.site || msg.host || "?", { tabId, durationMs: msg.durationMs, hidden: !!msg.hidden });
       if (msg.chime) playChime();
       if (msg.notif) {
         notifyDone(tabId, msg.title, msg.durationMs, msg.url);                                                              // OS banner via offscreen
@@ -461,6 +481,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       (async () => {
         const isNew = await addBlocked(tabId, { title: msg.title, site: msg.site, host: msg.host, url: msg.url, windowId, prompt: (typeof msg.prompt === "string" ? msg.prompt.slice(0, 300) : null) });
         if (!isNew) return; // heartbeat refresh — don't re-alert
+        dlog("blocked", msg.site || msg.host || "?", { tabId, hidden: !!msg.hidden });
         if (msg.chime) playChime();
         if (msg.notif && msg.hidden && HAS_NOTIFICATIONS) {
           const name = (msg.title || "").trim() || "Your agent";
@@ -485,10 +506,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       removeWaiting(tabId);
       return;
 
+    case "settlePing": {
+      // A hidden tab can't keep time — its timers are throttled to a crawl
+      // (the reason completions used to land only when the user returned to
+      // the tab). The SW's clock is never tab-throttled: call the tab back
+      // when its settle window elapses so "done" fires on schedule.
+      const ms = Math.min(Math.max(Number(msg.ms) || 3000, 500), 60000);
+      if (typeof tabId === "number") {
+        dlog("settle", "ping", { tabId, ms });
+        setTimeout(() => {
+          chrome.tabs.sendMessage(tabId, { type: "settleCheck" }, () => void chrome.runtime.lastError);
+        }, ms);
+      }
+      return;
+    }
+
+    case "dlog":
+      dlog("cs" + (typeof tabId === "number" ? ":" + tabId : ""), String(msg.msg || ""), msg.data);
+      return;
+
     case "hopeCmd":
       // Panel -> SW -> Hope tabs (targeted; session storage stays trusted-only).
       try {
-        chrome.tabs.query({ url: "https://bit.cloud/hope/session/*" }, (tabs) => {
+        chrome.tabs.query({ url: ["https://bit.cloud/hope/session/*", "https://*.bit.cloud/hope/session/*"] }, (tabs) => {
           for (const t of tabs || []) chrome.tabs.sendMessage(t.id, { type: "hopeCmd", action: msg.action }, () => void chrome.runtime.lastError);
         });
       } catch (e) {}
@@ -642,6 +682,7 @@ async function syncPanelSetting() {
   } catch (e) {
     enablePopupFallback();
   }
+  dlog("panel", panelOn ? "sidepanel-mode" : "popup-mode");
 }
 syncPanelSetting();
 
@@ -696,8 +737,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 // the new ones until the tab reloads — so a running session silently stops
 // being watched. Guards inside each file make a double injection a no-op.
 const MONITOR_FILES = ["constants.js", "profiles.js", "content.js"];
-const MONITOR_MATCHES = ["https://bit.cloud/*", "https://claude.ai/*", "https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*", "https://cursor.com/*", "https://www.cursor.com/*"];
-const NET_MATCHES = ["https://bit.cloud/*", "https://claude.ai/*", "https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*"];
+const MONITOR_MATCHES = ["https://bit.cloud/*", "https://*.bit.cloud/*", "https://claude.ai/*", "https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*", "https://cursor.com/*", "https://www.cursor.com/*"];
+const NET_MATCHES = ["https://bit.cloud/*", "https://*.bit.cloud/*", "https://claude.ai/*", "https://gemini.google.com/*", "https://chatgpt.com/*", "https://chat.openai.com/*"];
 async function injectIntoOpenTabs() {
   if (!(chrome.scripting && chrome.scripting.executeScript)) return;
   const query = async (url) => { try { return await chrome.tabs.query({ url }); } catch (e) { return []; } };
@@ -705,7 +746,7 @@ async function injectIntoOpenTabs() {
     try { await chrome.scripting.executeScript({ target: { tabId }, files, ...(world ? { world } : {}) }); } catch (e) {}
   };
   for (const t of await query(MONITOR_MATCHES)) await inject(t.id, MONITOR_FILES);
-  for (const t of await query(["https://bit.cloud/*"])) await inject(t.id, ["constants.js", "collapse.js"]);
+  for (const t of await query(["https://bit.cloud/*", "https://*.bit.cloud/*"])) await inject(t.id, ["constants.js", "collapse.js"]);
   for (const t of await query(NET_MATCHES)) await inject(t.id, ["nethook.js"], "MAIN");
   try {
     for (const s of await getUserSites()) {
