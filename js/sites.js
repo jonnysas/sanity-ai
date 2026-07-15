@@ -81,25 +81,25 @@ window.SanityMods.initSites = function ({ canMessage }) {
           refreshCurrentSite();
         });
       };
-      const requestNow = () => {
-        // Some browsers throw synchronously here (gesture rules differ in side
-        // panels) — never let that vanish silently.
+      // Permission prompts are only reliable when anchored to a real extension
+      // TAB. From a side panel or popup, some Chromium forks (Dia, Arc) simply
+      // never show the prompt — the callback never fires and the click feels
+      // dead. So the grant always happens on grant.html; when the permission
+      // is already there (e.g. re-adding after remove), skip straight to add.
+      const openGrantTab = () => {
+        try { chrome.runtime.sendMessage({ type: "dlog", msg: "sites: opening grant tab", data: { origin: parsed.origin } }); } catch (e) {}
         try {
-          chrome.permissions.request({ origins: [parsed.origin] }, (granted) => {
-            if (chrome.runtime.lastError) { showErr("Permission prompt failed: " + chrome.runtime.lastError.message); return; }
-            if (!granted) { showErr("Access wasn't granted for that site."); return; }
-            doAdd();
+          chrome.tabs.create({
+            url: chrome.runtime.getURL("grant.html") + "?origin=" + encodeURIComponent(parsed.origin) + "&host=" + encodeURIComponent(parsed.host),
+            active: true,
           });
-        } catch (e) {
-          showErr("This browser blocked the permission prompt here" + (e && e.message ? " (" + e.message + ")" : "") + ".");
-        }
+        } catch (e) { showErr("Couldn't open the grant page" + (e && e.message ? " (" + e.message + ")" : "") + "."); }
       };
-      // Already granted (e.g., re-adding after remove)? Skip the prompt entirely.
       try {
         chrome.permissions.contains({ origins: [parsed.origin] }, (has) => {
-          if (!chrome.runtime.lastError && has) doAdd(); else requestNow();
+          if (!chrome.runtime.lastError && has) doAdd(); else openGrantTab();
         });
-      } catch (e) { requestNow(); }
+      } catch (e) { openGrantTab(); }
     };
     // One-tap: add the site the user is currently on (domain auto-detected).
     if (cur) cur.addEventListener("click", () => { showErr(""); if (pendingSite) grantAndAdd(pendingSite); });
@@ -110,6 +110,12 @@ window.SanityMods.initSites = function ({ canMessage }) {
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
     }
     if (canMessage) chrome.runtime.sendMessage({ type: "listUserSites" }, (res) => { if (!chrome.runtime.lastError) renderUserSites(res && res.sites); refreshCurrentSite(); });
+    // The grant tab adds sites out-of-band — mirror the change here live.
+    try {
+      chrome.storage.onChanged.addListener((ch, area) => {
+        if (area === "local" && ch.userSites) { renderUserSites(ch.userSites.newValue || []); refreshCurrentSite(); }
+      });
+    } catch (e) {}
     // Keep the detected site fresh as the user switches tabs/windows.
     refreshCurrentSite();
     try { chrome.tabs.onActivated.addListener(refreshCurrentSite); } catch (e) {}

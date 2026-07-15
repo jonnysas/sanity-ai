@@ -24,7 +24,8 @@
   const PROFILES = [
     {
       name: "hope", label: "Hope AI",
-      test: (h, p) => h === "bit.cloud" && p.startsWith("/hope/session/"),
+      // Covers bit.cloud and its lanes/staging subdomains (main.lanes.bit.cloud …)
+      test: (h, p) => /(^|\.)bit\.cloud$/i.test(h) && p.startsWith("/hope/session/"),
       settleMs: 2500, minActiveMs: 2000,
       useNetwork: true, domFallback: true, // POST api.v2.bit.cloud/hope/api/prompt (SSE) is primary; DOM is the safety net
       root: () => document.querySelector('[class*="conversation" i], [class*="messages" i], main') || document.body,
@@ -52,7 +53,7 @@
       // Hope's widget can fire /hope/api/prompt from ANY bit.cloud page, and
       // that submit must count as a run from second zero. Follows the same
       // settings toggle as "hope".
-      test: (h) => h === "bit.cloud",
+      test: (h) => /(^|\.)bit\.cloud$/i.test(h),
       settings: "hope",
       settleMs: 2500, minActiveMs: 2000,
       useNetwork: true, // network-only: no domFallback, empty indicators

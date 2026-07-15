@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sanity AI",
-  "version": "2.33.0",
+  "version": "2.34.0",
   "description": "Get a chime and a live overview the moment your AI agents finish working. Stay sane working with AI tools.",
   "author": "Yonatan Sason",
   "permissions": [
@@ -28,6 +28,7 @@
     {
       "matches": [
         "https://bit.cloud/*",
+        "https://*.bit.cloud/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
         "https://chatgpt.com/*",
@@ -44,7 +45,8 @@
     },
     {
       "matches": [
-        "https://bit.cloud/*"
+        "https://bit.cloud/*",
+        "https://*.bit.cloud/*"
       ],
       "js": [
         "constants.js",
@@ -55,6 +57,7 @@
     {
       "matches": [
         "https://bit.cloud/*",
+        "https://*.bit.cloud/*",
         "https://gemini.google.com/*",
         "https://claude.ai/*",
         "https://chatgpt.com/*",
@@ -90,6 +93,7 @@
   ],
   "host_permissions": [
     "https://bit.cloud/*",
+    "https://*.bit.cloud/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
     "https://chatgpt.com/*",

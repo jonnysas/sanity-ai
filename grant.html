@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Watch a site — Sanity AI</title>
+<style>
+  /* Still Water mini page. Permission prompts anchor reliably to a real
+     extension tab — side panels and popups can't be trusted for this on
+     every Chromium fork (Dia/Arc never show the prompt there). */
+  :root {
+    --bg: #FAF9F7; --card: #FFFFFF; --ink: #1C1B22; --muted: #6E6B78;
+    --line: #ECEAE6; --line-soft: #F2F0EC; --accent: #4F46E5;
+    --accent-soft: #EFEDFC; --success: #1FA855; --alert: #B45309;
+    --alert-soft: #FFF9EE; --alert-line: #F0E2C4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141317; --card: #1D1C23; --ink: #EDECEF; --muted: #9C99A6;
+      --line: #2C2A33; --line-soft: #232128; --accent: #8B83FF;
+      --accent-soft: rgba(139,131,255,0.14); --success: #2FB868;
+      --alert: #F5B13B; --alert-soft: #241E10; --alert-line: #453718;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); color: var(--ink); padding: 32px 20px;
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card { max-width: 420px; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 32px 32px 26px; text-align: center; }
+  .card img { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 14px; }
+  h1 { font-size: 17px; font-weight: 680; letter-spacing: -0.01em; margin: 0 0 6px; }
+  h1 .host { color: var(--accent); }
+  p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+  button {
+    width: 100%; padding: 12px; border: none; border-radius: 11px; cursor: pointer;
+    background: var(--accent); color: #fff; font: inherit; font-size: 14px; font-weight: 650;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:disabled { opacity: .5; cursor: default; }
+  .status { margin-top: 14px; font-size: 12.5px; display: none; padding: 8px 10px; border-radius: 8px; }
+  .status.ok { display: block; color: var(--success); }
+  .status.err { display: block; color: var(--alert); background: var(--alert-soft); border: 1px solid var(--alert-line); }
+  .fine { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size: 11.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img src="icon128.png" alt="Sanity AI">
+    <h1>Watch <span class="host" id="host">this site</span>?</h1>
+    <p>Sanity will notice when its AI stops generating and let you know — a chime, a nudge, a mark on the tab. Your browser will ask you to allow access first.</p>
+    <button id="grantBtn">Allow and start watching</button>
+    <div class="status" id="status"></div>
+    <div class="fine">Detection runs on your device. Nothing is ever sent anywhere.</div>
+  </div>
+<script src="grant.js"></script>
+</body>
+</html>
